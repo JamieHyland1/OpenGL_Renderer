@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "gl.h": "c",
+        "stdbool.h": "c",
+        "glad.h": "c",
+        "glew.h": "c",
+        "string": "c",
+        "stdio.h": "c",
+        "initializer_list": "c",
+        "type_traits": "c",
+        "xstring": "c",
+        "xutility": "c"
+    }
+}
