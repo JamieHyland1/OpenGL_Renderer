@@ -7,6 +7,7 @@
 #include <C:\SDL2\include\SDL_opengl.h>
 #include "math.h"
 #include "shader.h"
+#include "texture.h"
 //#include "../include/glad/glad.h"
 
 static int window_width = 640;
@@ -22,24 +23,28 @@ unsigned int vertexShader;
 unsigned int fragmentShader;
 unsigned int shaderProgram;
 
-shader_t shader;
+float time = 0;
 
-float vertices[] = {
-        // first triangle
-         // positions         // colors
-     0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
-    -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
-     0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // top 
-        // // second triangle
-        //  0.0f, -0.5f, 0.0f,  // left
-        //  0.9f, -0.5f, 0.0f,  // right
-        //  0.45f, 0.5f, 0.0f   // top 
+shader_t shader;
+texture_t tex;
+texture_t tex2;
+ float vertices[] = {
+       // positions          // colors           // texture coords
+     0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+     0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+    -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+    -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
     };
 unsigned int indices[] = {  // note that we start from 0!
     0, 1, 3,   // first triangle
     1, 2, 3    // second triangle
-};  
+};
 
+float texCoords[] = {
+    0.5f, 1.0f,   // top-center corner
+    1.0f, 0.0f,   // lower-right corner
+    0.0f, 0.0f   // lower-left corner  
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Global variables for execution status and game loop
@@ -77,9 +82,12 @@ int setup(void) {
     // window_height = full_screen_height/2;
     filenames[0] = "./shaders/vertex_shader.glsl";
     filenames[1] = "./shaders/fragment_shader.glsl";
+
+    stbi_set_flip_vertically_on_load(true);
+
     //TODO create SDL window
     window = SDL_CreateWindow(
-        "The window into jamie's madness",
+        "The window into Jamie's madness",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         window_width,
@@ -124,21 +132,31 @@ int init_openGL(){
         printf("initialized shaders\n");
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
 
         glBindVertexArray(VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
+        // position attribute
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        // color attribute
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
         glEnableVertexAttribArray(1);
+        // texture coord attribute
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(2);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0); 
-
-
+        
+        
+        tex  = init_texture("./textures/lffy.png");
+        tex2 = init_texture("./textures/gear5.jpg");
         glBindVertexArray(0); 
         return 1;
     }else{
@@ -182,7 +200,9 @@ void update(void) {
     // Get a delta time factor converted to seconds to be used to update our game objects
     delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
 
+    time = (float)SDL_GetTicks()/1000;
     
+    // printf("time: %f\n",time);
    
 
 
@@ -194,14 +214,21 @@ void update(void) {
 void render(void) {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-
-    // draw our first triangle
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, tex.id);
+    
+    glActiveTexture(GL_TEXTURE1); 
+    glBindTexture(GL_TEXTURE_2D, tex2.id);
+    
     use_shader(shader.shader_ID);
-
+    set_int(shader.shader_ID,"ourTexture",0);
+    set_int(shader.shader_ID,"texture2",1);
+    set_float(shader.shader_ID,"time",time);
 
 
     glBindVertexArray(VAO); 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     SDL_GL_SwapWindow(window);
 }

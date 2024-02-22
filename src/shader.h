@@ -16,7 +16,7 @@ bool init_shader(shader_t* shader, char* shader_filenames[2]);
 void use_shader(int id);
 void set_bool  (int id, char* name, bool value);
 void set_int   (int id, char* name, int value);
-void set_float (int id, char* name, int value);
+void set_float (int id, char* name, float value);
 GLchar* get_shader_source(char* filename);
 
 #endif
