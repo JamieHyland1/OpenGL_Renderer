@@ -77,8 +77,8 @@ void set_int   (int id, char* name, int value){
     glUniform1i(glGetUniformLocation(id,name),value);
 }
 
-void set_float (int id, char* name, int value){
-    glUniform1i(glGetUniformLocation(id,name),value);
+void set_float (int id, char* name, float value){
+    glUniform1f(glGetUniformLocation(id,name),value);
 }
 
 GLchar* get_shader_source(char* filename){
