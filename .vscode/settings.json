@@ -11,6 +11,7 @@
         "xstring": "c",
         "xutility": "c",
         "stdlib.h": "c",
-        "texture.h": "c"
+        "texture.h": "c",
+        "shader.h": "c"
     }
 }

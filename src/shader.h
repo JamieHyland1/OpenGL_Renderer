@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <C:\SDL2\include\SDL.h>
+#include "../include/cglm/cglm.h"
 typedef struct{
     const GLchar* vertex_source;
     const GLchar* fragment_source;
@@ -17,6 +18,7 @@ void use_shader(int id);
 void set_bool  (int id, char* name, bool value);
 void set_int   (int id, char* name, int value);
 void set_float (int id, char* name, float value);
+void set_matrix(int id, char* name, mat4 mat);
 GLchar* get_shader_source(char* filename);
 
 #endif

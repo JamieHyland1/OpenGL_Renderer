@@ -1,10 +1,11 @@
 #define GLEW_STATIC
 #include "../include/GL/glew.h"
+#include <C:\SDL2\include\SDL.h>
+#include <C:\SDL2\include\SDL_opengl.h>
+#include "../include/cglm/cglm.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <C:\SDL2\include\SDL.h>
-#include <C:\SDL2\include\SDL_opengl.h>
 #include "math.h"
 #include "shader.h"
 #include "texture.h"
@@ -24,10 +25,16 @@ unsigned int fragmentShader;
 unsigned int shaderProgram;
 
 float time = 0;
-
+vec4 vec = {1.0,0.0,0.0,1.0};
+mat4 trans;
 shader_t shader;
 texture_t tex;
 texture_t tex2;
+vec4 t;
+vec3 axis = {0.0,0.0,1.0};
+vec3 scale = {0.5f,0.5f,0.5f};
+vec3 v = {0.5f,-0.5f,0.0};
+ 
  float vertices[] = {
        // positions          // colors           // texture coords
      0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
@@ -65,7 +72,18 @@ int setup(void) {
         fprintf(stderr, "Error initializing SDL window");
         return false;
     }
-
+    printf("vec: x %f y %f z %f\n\n", vec[0],vec[1],vec[2]);
+    glm_mat4_identity(trans);
+    
+    //glm_vec3(vec,v);
+    glm_translated(trans, &v[0]);
+    //glm_mat4_mulv(trans,vec,vec);
+    
+    
+  
+    //glm_scale_make(&trans,vec3{0.5f,0.5f,0.5f});
+    printf("vec: x %f y %f z %f\n\n", vec[0],vec[1],vec[2]);
+    
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
@@ -75,11 +93,11 @@ int setup(void) {
 
     SDL_GetCurrentDisplayMode(0, &displayMode);
 
+
     // int full_screen_width = displayMode.w;
     // int full_screen_height = displayMode.h;
-
-    // window_width = full_screen_width/3;
-    // window_height = full_screen_height/2;
+    // window_width = full_screen_width;
+    // window_height = full_screen_height;
     filenames[0] = "./shaders/vertex_shader.glsl";
     filenames[1] = "./shaders/fragment_shader.glsl";
 
@@ -116,8 +134,7 @@ int setup(void) {
     SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
     context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window,context);
-    
-
+   
     glewExperimental = GL_TRUE;
     glewInit();
     
@@ -155,8 +172,8 @@ int init_openGL(){
         glBindBuffer(GL_ARRAY_BUFFER, 0); 
         
         
-        tex  = init_texture("./textures/lffy.png");
-        tex2 = init_texture("./textures/gear5.jpg");
+        tex  = init_texture("./textures/wall.jpg");
+        tex2 = init_texture("./textures/lffy.png");
         glBindVertexArray(0); 
         return 1;
     }else{
@@ -201,7 +218,17 @@ void update(void) {
     delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
 
     time = (float)SDL_GetTicks()/1000;
+    glm_mat4_identity(trans);
     
+     float angle = fmodf(time,360.0f);
+     angle *=20;
+     glm_make_rad(&angle);
+    //scale[0] += sinf(time) * delta_time;
+    printf("angle%f\n\n",fmodf(time,6.0f));
+    
+    glm_translated(&trans[0], &v[0]);
+    glm_rotate(&trans[0], angle * 5, &axis[0]);
+    glm_scale(&trans[0], &scale[0]);
     // printf("time: %f\n",time);
    
 
@@ -225,6 +252,7 @@ void render(void) {
     set_int(shader.shader_ID,"ourTexture",0);
     set_int(shader.shader_ID,"texture2",1);
     set_float(shader.shader_ID,"time",time);
+    set_matrix(shader.shader_ID,"transform", trans);
 
 
     glBindVertexArray(VAO); 
