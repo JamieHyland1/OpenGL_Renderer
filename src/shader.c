@@ -5,6 +5,13 @@
 #include <ctype.h>
 #include <C:\SDL2\include\SDL.h>
 #include "shader.h"
+#include "../include/cglm/cglm.h"
+
+///////////////////////////////////
+// This class handles shaders
+// specifically initializing  them,  
+// using them and passing various uniforms at runtime 
+///////////////////////////////////
 
 bool init_shader(shader_t* shader, char* shader_filenames[2]){
     shader->vertex_source   = get_shader_source(shader_filenames[0]);
@@ -79,6 +86,10 @@ void set_int   (int id, char* name, int value){
 
 void set_float (int id, char* name, float value){
     glUniform1f(glGetUniformLocation(id,name),value);
+}
+
+void set_matrix(int id, char* name, mat4 mat){
+    glUniformMatrix4fv(glGetUniformLocation(id, name),1,GL_FALSE,(float *)mat);
 }
 
 GLchar* get_shader_source(char* filename){
