@@ -12,6 +12,8 @@
         "xutility": "c",
         "stdlib.h": "c",
         "texture.h": "c",
-        "shader.h": "c"
+        "shader.h": "c",
+        "cglm.h": "c",
+        "camera.h": "c"
     }
 }

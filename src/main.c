@@ -9,57 +9,97 @@
 #include "math.h"
 #include "shader.h"
 #include "texture.h"
-//#include "../include/glad/glad.h"
+#include "camera.h"
 
-static int window_width = 640;
-static int window_height = 480;
-
+//TODO: clean up all these variables into a display file or some sort of file that handles the settings of the renderer
+static int window_width = 1200;
+static int window_height = 800;
 unsigned int VBO;
 unsigned int VAO;
 
 char* filenames[2];
 unsigned int EBO;
-
 unsigned int vertexShader;
 unsigned int fragmentShader;
 unsigned int shaderProgram;
-
 float time = 0;
-vec4 vec = {1.0,0.0,0.0,1.0};
-mat4 trans;
+float fov = -45.0f;
+mat4 model,view,projection;
 shader_t shader;
 texture_t tex;
 texture_t tex2;
-vec4 t;
-vec3 axis = {0.0,0.0,1.0};
+vec3 axis = {0.5f,1.0f,0.0f};
 vec3 scale = {0.5f,0.5f,0.5f};
-vec3 v = {0.5f,-0.5f,0.0};
- 
- float vertices[] = {
-       // positions          // colors           // texture coords
-     0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-     0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-    -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-    -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
-    };
-unsigned int indices[] = {  // note that we start from 0!
-    0, 1, 3,   // first triangle
-    1, 2, 3    // second triangle
-};
+vec3 cameraPos = {0.0f,0.0f,13.0f};
+vec3 up = {0.0f,1.0f,0.0f};
 
-float texCoords[] = {
-    0.5f, 1.0f,   // top-center corner
-    1.0f, 0.0f,   // lower-right corner
-    0.0f, 0.0f   // lower-left corner  
+float vertices[] = {
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+};
+unsigned int indices[] = {
+        0, 1, 3, // first triangle
+        1, 2, 3  // second triangle
+    };
+vec3 cubePositions[] = {
+    (vec3){ 0.0f,  0.0f,  0.0f}, 
+    (vec3){ 2.0f,  5.0f, -1.0f}, 
+    (vec3){-1.5f, -2.2f, -2.5f},  
+    (vec3){-3.8f, -2.0f, -1.3f},  
+    (vec3){ 2.4f, -0.4f, -3.5f},  
+    (vec3){-1.7f,  3.0f, -7.5f},  
+    (vec3){ 1.3f, -2.0f, -2.5f},  
+    (vec3){ 1.5f,  2.0f, -2.5f}, 
+    (vec3){ 1.5f,  0.2f, -1.5f}, 
+    (vec3){-1.3f,  1.0f, -1.5f}  
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// Global variables for execution status and game loop
+// Global variables for execution status and renderer loop
 ///////////////////////////////////////////////////////////////////////////////
 bool is_running = false;
 int previous_frame_time = 0;
-float delta_time = 0; 
-#define FPS 60
+static float delta_time = 0; 
+#define FPS 144
 #define FRAME_TARGET_TIME  (1000 / FPS)
 static SDL_Window* window = NULL;
 SDL_GLContext context = NULL;
@@ -68,21 +108,10 @@ static SDL_Renderer* renderer = NULL;
 // Setup function to initialize variables and game objects
 ///////////////////////////////////////////////////////////////////////////////
 int setup(void) {
-      if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
-        fprintf(stderr, "Error initializing SDL window");
-        return false;
+    if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
+    fprintf(stderr, "Error initializing SDL window");
+    return false;
     }
-    printf("vec: x %f y %f z %f\n\n", vec[0],vec[1],vec[2]);
-    glm_mat4_identity(trans);
-    
-    //glm_vec3(vec,v);
-    glm_translated(trans, &v[0]);
-    //glm_mat4_mulv(trans,vec,vec);
-    
-    
-  
-    //glm_scale_make(&trans,vec3{0.5f,0.5f,0.5f});
-    printf("vec: x %f y %f z %f\n\n", vec[0],vec[1],vec[2]);
     
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -103,7 +132,7 @@ int setup(void) {
 
     stbi_set_flip_vertically_on_load(true);
 
-    //TODO create SDL window
+    
     window = SDL_CreateWindow(
         "The window into Jamie's madness",
         SDL_WINDOWPOS_CENTERED,
@@ -112,13 +141,12 @@ int setup(void) {
         window_height,
         SDL_WINDOW_OPENGL
     );
-
     if(!window){
         fprintf(stderr, "Error creating SDL window");
         return false;
     }
 
-    //TODO create SDL Renderer
+ 
     renderer = SDL_CreateRenderer(window,-1, 0);
 
     if(!renderer){
@@ -134,16 +162,19 @@ int setup(void) {
     SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
     context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window,context);
-   
     glewExperimental = GL_TRUE;
-    glewInit();
     
+    glewInit();
+
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 
+    init_camera(cameraPos,up);
     return true; 
 }
-
+///////////////////////////////////////////////////////////////////////////////
+// Init function for openGL to set its various parameters
+///////////////////////////////////////////////////////////////////////////////
 int init_openGL(){
     if(init_shader(&shader, filenames)){
         printf("initialized shaders\n");
@@ -155,25 +186,21 @@ int init_openGL(){
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-        // position attribute
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+            // position attribute
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
-        // color attribute
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
         // texture coord attribute
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-        glEnableVertexAttribArray(2);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0); 
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        glEnable(GL_DEPTH_TEST); 
         
+        stbi_set_flip_vertically_on_load(true);
         
-        tex  = init_texture("./textures/wall.jpg");
-        tex2 = init_texture("./textures/lffy.png");
+        tex  = init_texture("./textures/lffy.png");
+        tex2 = init_texture("./textures/jolly_roger.png");
         glBindVertexArray(0); 
         return 1;
     }else{
@@ -181,7 +208,6 @@ int init_openGL(){
     }
  return false;
 }
-
 ///////////////////////////////////////////////////////////////////////////////
 // Poll system events and handle keyboard input
 ///////////////////////////////////////////////////////////////////////////////
@@ -193,17 +219,24 @@ void process_input(void) {
                 is_running = false;
                 break;
             }
-            case SDL_KEYDOWN: {
-                if (event.key.keysym.sym == SDLK_ESCAPE) {
+            case SDL_KEYDOWN:
+                if(event.key.keysym.sym == SDLK_ESCAPE){
                     is_running = false;
-                    break;
                 }
-            }
+                process_keyboard_movement(event,1);
+                break;    
+            case SDL_MOUSEMOTION:
+                process_mouse_move((float)event.motion.xrel,(float)event.motion.yrel,1);
+                break;
+            case SDL_MOUSEWHEEL:
+                fov -= (float) event.wheel.y;
+                if (fov < 1.0f)
+                    fov = 1.0f;
+                if (fov > 45.0f)
+                    fov = 45.0f; 
         }
     }
 }
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Update function frame by frame with a fixed time step
 ///////////////////////////////////////////////////////////////////////////////
@@ -218,29 +251,27 @@ void update(void) {
     delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
 
     time = (float)SDL_GetTicks()/1000;
-    glm_mat4_identity(trans);
-    
-     float angle = fmodf(time,360.0f);
-     angle *=20;
-     glm_make_rad(&angle);
-    //scale[0] += sinf(time) * delta_time;
-    printf("angle%f\n\n",fmodf(time,6.0f));
-    
-    glm_translated(&trans[0], &v[0]);
-    glm_rotate(&trans[0], angle * 5, &axis[0]);
-    glm_scale(&trans[0], &scale[0]);
-    // printf("time: %f\n",time);
-   
 
-
+    glm_mat4_identity(model);
+    glm_mat4_identity(view);
+    glm_mat4_identity(projection);
+    
+    float angle = fmodf(1,360.0f) * 20;
+    float p_angle = fov;
+    glm_make_rad(&angle);
+    glm_make_rad(&p_angle);
+    glm_rotate(&model[0], angle, &axis[0]);
+    camera_look_at(&view);
+    glm_perspective(p_angle,(float)(window_width/window_height),0.1f,100.0f,projection);
+    
     previous_frame_time = SDL_GetTicks();
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Render function to draw objects on the display
 ///////////////////////////////////////////////////////////////////////////////
 void render(void) {
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.4f,0.4f,0.98f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, tex.id);
@@ -249,18 +280,34 @@ void render(void) {
     glBindTexture(GL_TEXTURE_2D, tex2.id);
     
     use_shader(shader.shader_ID);
+
+    set_matrix(shader.shader_ID,"model", model);
+    set_matrix(shader.shader_ID,"view", view);
+    set_matrix(shader.shader_ID,"projection", projection);
+
     set_int(shader.shader_ID,"ourTexture",0);
     set_int(shader.shader_ID,"texture2",1);
     set_float(shader.shader_ID,"time",time);
-    set_matrix(shader.shader_ID,"transform", trans);
-
 
     glBindVertexArray(VAO); 
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    for(unsigned int i = 0; i < 10; i ++){
+        glm_mat4_identity(&model[0]);
+        glm_translate(&model[0], &cubePositions[i][0]);
+        float angle = (20.0f * i);
+        glm_make_rad(&angle);
+        axis[0] = 1.0f - i;
+        axis[1] = 0.3f+time - i;
+        axis[2] = 0.5f - i;
+
+        glm_rotate(&model[0],angle,axis);
+        glm_rotate(&model[0], angle + time, &axis[0]);
+        set_matrix(shader.shader_ID,"model", model);
+
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 
     SDL_GL_SwapWindow(window);
 }
-
 ///////////////////////////////////////////////////////////////////////////////
 // Free the memory that was dynamically allocated by the program
 ///////////////////////////////////////////////////////////////////////////////
@@ -269,14 +316,13 @@ void free_resources(void) {
     glDeleteBuffers(1, &VBO);
     glDeleteProgram(shaderProgram);
 }
-
 ///////////////////////////////////////////////////////////////////////////////
 // Main function
 ///////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* args[]){
     setup();
     is_running = init_openGL();
-    glViewport(0, 0, 640, 480);
+    glViewport(0, 0, window_width, window_height);
     while (is_running) {
         process_input();
         update();

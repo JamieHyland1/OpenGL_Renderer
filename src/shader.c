@@ -7,6 +7,12 @@
 #include "shader.h"
 #include "../include/cglm/cglm.h"
 
+///////////////////////////////////
+// This class handles shaders
+// specifically initializing  them,  
+// using them and passing various uniforms at runtime 
+///////////////////////////////////
+
 bool init_shader(shader_t* shader, char* shader_filenames[2]){
     shader->vertex_source   = get_shader_source(shader_filenames[0]);
     shader->fragment_source = get_shader_source(shader_filenames[1]);
