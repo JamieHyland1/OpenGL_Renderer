@@ -18,7 +18,7 @@
 
 camera_t camera = {
     .position = {0,0,3.0},
-    .direction = {0,0,-1},
+    .direction = {0,0,-1.0f},
     .cam_vel = {0.0f,0.0f,0.0f},
     .right = {1.0,0.0,0.0},
     .worldUp = {0.0,1.0,0.0},

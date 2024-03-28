@@ -10,6 +10,7 @@
 #include "shader.h"
 #include "texture.h"
 #include "camera.h"
+#include "material.h"
 
 
 //TODO: clean up all these variables into a display file or some sort of file that handles the settings of the renderer
@@ -17,7 +18,7 @@ static int window_width = 800;
 static int window_height = 600;
 unsigned int VBO;
 unsigned int cubeVAO, lightVAO;
-vec3 lightPos = {1.2f, -2.0f, 2.0f};
+vec3 lightPos = {1.2f, 10.0f, 2.0f};
 vec3 lightScale = {0.42f,0.42f,0.42f};
 char* obj_shaders[2];
 char* light_shaders[2];
@@ -32,52 +33,53 @@ shader_t obj_shader, light_shader;
 texture_t tex;
 texture_t tex2;
 vec3 axis = {0.5f,1.0f,0.0f};
-vec3 scale = {0.5f,0.5f,0.5f};
+
 vec3 cameraPos = {0.0f,-10.0f,13.0f};
 vec3 up = {0.0f,1.0f,0.0f};
 
 float vertices[] = {
-    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
-     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
-     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
-    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
-    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+     // positions          // normals           // texture coords
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
 
-    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
 
-    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
 
-     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
 
-    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
 
-    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
 };
 unsigned int indices[] = {
    -0.5f, -0.5f, -0.5f,  1.0f, 0.0f,0.0f,
@@ -85,7 +87,7 @@ unsigned int indices[] = {
      0.0f,  0.5f, 0.5f,  0.0f, 0.0f,1.0f
     };
 
-
+material_t mat;
 ///////////////////////////////////////////////////////////////////////////////
 // Global variables for execution status and renderer loop
 ///////////////////////////////////////////////////////////////////////////////
@@ -114,8 +116,13 @@ int setup(void) {
     SDL_DisplayMode displayMode;
 
     SDL_GetCurrentDisplayMode(0, &displayMode);
+    
+    set_material_ambient(&mat, (vec3){1.0f, 0.5f, 0.31f});
+    set_material_diffuse(&mat, (vec3){1.0f, 0.5f, 0.31f});
+    set_material_specular(&mat,(vec3){0.5f, 0.5f, 0.5f});
+    set_material_shininess(&mat, 32.0f);
 
-
+    printf("material shininess %f" , mat.specular[0]);
     // int full_screen_width = displayMode.w;
     // int full_screen_height = displayMode.h;
     // window_width = full_screen_width;
@@ -182,11 +189,14 @@ int init_openGL(){
         glBindVertexArray(cubeVAO);
      
         // position attribute
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
         glEnableVertexAttribArray(1);
+
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(2);
 
         // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
         glGenVertexArrays(1, &lightVAO);
@@ -195,7 +205,7 @@ int init_openGL(){
         // we only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need (it's already bound, but we do it again for educational purposes)
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
         // texture coord attribute
 
@@ -204,7 +214,7 @@ int init_openGL(){
         
         stbi_set_flip_vertically_on_load(true);
         
-        tex  = init_texture("./textures/lffy.png");
+        tex  = init_texture("./textures/container.jpg");
         tex2 = init_texture("./textures/jolly_roger.png");
 
         return 1;
@@ -265,7 +275,7 @@ void update(void) {
     // lightPos[2] += -5 * sin(time) * delta_time;
 
 
-    float angle = fmodf(1,360.0f) * 20;
+    float angle = fmodf(time,360.0f);
     float p_angle = fov;
     glm_make_rad(&angle);
     glm_make_rad(&p_angle);
@@ -289,7 +299,6 @@ void render(void) {
     glBindTexture(GL_TEXTURE_2D, tex2.id);
     
     use_shader(obj_shader.shader_ID);
-    vec3 col = {1.0f,0.0f,0.0f};
     vec3 light = {1.0f,1.0f,1.0f};
     glm_rotate_y(&model[0], time, &model[0]);
     
@@ -298,22 +307,28 @@ void render(void) {
     set_matrix(obj_shader.shader_ID,"projection", projection);
 
     get_camera_position(&cameraPos);
-    printf("%f,%f,%f\n", cameraPos[0],cameraPos[1],cameraPos[2]);
+    //printf("%f,%f,%f\n", cameraPos[0],cameraPos[1],cameraPos[2]);
     set_float(obj_shader.shader_ID,"time",time);
-    
-    set_vec3(obj_shader.shader_ID, "objectColor", col);
+
     set_vec3(obj_shader.shader_ID, "lightColor", light);
     set_vec3(obj_shader.shader_ID, "lightPos", lightPos);
     set_vec3(obj_shader.shader_ID, "viewPos", cameraPos);
+    //set_vec3(obj_shader.shader_ID, "material.ambient", mat.ambient);
+    // set_vec3(obj_shader.shader_ID, "material.diffuse", mat.diffuse);
+    set_vec3(obj_shader.shader_ID, "material.specular", mat.specular);
+    set_float(obj_shader.shader_ID, "material.shininess", mat.shininess);
+    set_int(obj_shader.shader_ID,"material.diffuse", 0);
+    
+
+    set_vec3(obj_shader.shader_ID, "light.ambient", (vec3){0.2f, 0.2f, 0.2f});
+    set_vec3(obj_shader.shader_ID, "light.diffuse", (vec3){0.5f, 0.5f, 0.5f});
+    set_vec3(obj_shader.shader_ID, "light.specular",(vec3){1.0f, 1.0f, 1.0f});
    
     glBindVertexArray(cubeVAO); 
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     use_shader(light_shader.shader_ID);
-    col[0] = 1.0f;
-    col[1] = 1.0f;
-    col[2] = 1.0f;
-  
+
     glm_mat4_identity(model);
     set_matrix(light_shader.shader_ID,"view", view);
     set_matrix(light_shader.shader_ID,"projection", projection);
