@@ -16,7 +16,7 @@
 ///////////////////////////////////
 
 
-static camera_t camera = {
+camera_t camera = {
     .position = {0,0,3.0},
     .direction = {0,0,-1},
     .cam_vel = {0.0f,0.0f,0.0f},
@@ -54,26 +54,26 @@ void process_keyboard_movement(SDL_Event event, float delta_time){
     if(event.key.keysym.sym == SDLK_w){
         glm_vec3_scale(&camera.direction[0],camSpeed*delta_time,&camera.cam_vel[0]);
         glm_vec3_add(&camera.position[0],&camera.cam_vel[0],&camera.position[0]);
-        camera.position[1] = 0;
+        camera.position[1] = -1;
     }
     else if(event.key.keysym.sym == SDLK_s){
         glm_vec3_scale(&camera.direction[0],camSpeed*delta_time,&camera.cam_vel[0]);
         glm_vec3_sub(&camera.position[0],&camera.cam_vel[0],&camera.position[0]);
-        camera.position[1] = 0;
+        camera.position[1] = -1;
     }
     else if(event.key.keysym.sym == SDLK_a){
         glm_vec3_cross(&camera.direction[0],&camera.up[0],&camera.cam_vel[0]);
         glm_vec3_normalize(&camera.cam_vel[0]);
         glm_vec3_scale(&camera.cam_vel[0],camSpeed*delta_time,&camera.cam_vel[0]);
         glm_vec3_add(&camera.position[0],&camera.cam_vel[0],&camera.position[0]);
-        camera.position[1] = 0;
+        camera.position[1] = -1;
     }
     else if(event.key.keysym.sym == SDLK_d){
         glm_vec3_cross(&camera.direction[0],&camera.up[0],&camera.cam_vel[0]);
         glm_vec3_normalize(&camera.cam_vel[0]);
         glm_vec3_scale(&camera.cam_vel[0],camSpeed*delta_time,&camera.cam_vel[0]);
         glm_vec3_sub(&camera.position[0],&camera.cam_vel[0],&camera.position[0]);
-        camera.position[1] = 0;
+        camera.position[1] = -1;
     }
 
     updateCameraVectors(delta_time);
@@ -106,4 +106,10 @@ void updateCameraVectors(float delta_time){
     camera.cam_vel[1] = 0;
     camera.cam_vel[2] = 0;
     
+}
+
+void get_camera_position( vec3* vec){
+    for (int i = 0; i < 3; i++) {
+        (*vec)[i] = camera.position[i];
+    }
 }

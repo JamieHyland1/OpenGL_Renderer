@@ -19,6 +19,7 @@ void set_bool  (int id, char* name, bool value);
 void set_int   (int id, char* name, int value);
 void set_float (int id, char* name, float value);
 void set_matrix(int id, char* name, mat4 mat);
+void set_vec3 (int id, char* name, vec3 color); 
 GLchar* get_shader_source(char* filename);
 
 #endif
