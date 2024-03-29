@@ -16,9 +16,10 @@
 //TODO: clean up all these variables into a display file or some sort of file that handles the settings of the renderer
 static int window_width = 800;
 static int window_height = 600;
+bool mouse_button_down = false;
 unsigned int VBO;
 unsigned int cubeVAO, lightVAO;
-vec3 lightPos = {1.2f, 10.0f, 2.0f};
+vec3 lightPos = {1.2f, 2.0f, -2.0f};
 vec3 lightScale = {0.42f,0.42f,0.42f};
 char* obj_shaders[2];
 char* light_shaders[2];
@@ -27,14 +28,14 @@ unsigned int vertexShader;
 unsigned int fragmentShader;
 unsigned int shaderProgram;
 float time = 0;
-float fov = -45.0f;
+float fov = 45.0f;
 mat4 model,view,projection;
 shader_t obj_shader, light_shader;
 texture_t tex;
 texture_t tex2;
 vec3 axis = {0.5f,1.0f,0.0f};
 
-vec3 cameraPos = {0.0f,-10.0f,13.0f};
+vec3 cameraPos = {0.0f, 0.0f, 5.0f};
 vec3 up = {0.0f,1.0f,0.0f};
 
 float vertices[] = {
@@ -122,7 +123,7 @@ int setup(void) {
     set_material_specular(&mat,(vec3){0.5f, 0.5f, 0.5f});
     set_material_shininess(&mat, 32.0f);
 
-    printf("material shininess %f" , mat.specular[0]);
+   
     // int full_screen_width = displayMode.w;
     // int full_screen_height = displayMode.h;
     // window_width = full_screen_width;
@@ -212,10 +213,10 @@ int init_openGL(){
 
         glEnable(GL_DEPTH_TEST); 
         
-        stbi_set_flip_vertically_on_load(true);
+        //stbi_set_flip_vertically_on_load(true);
         
         tex  = init_texture("./textures/container.jpg");
-        tex2 = init_texture("./textures/jolly_roger.png");
+        tex2 = init_texture("./textures/containerSpecular.jpg");
 
         return 1;
     }else{
@@ -240,8 +241,16 @@ void process_input(void) {
                 }
                 process_keyboard_movement(event,1);
                 break;    
+            case SDL_MOUSEBUTTONDOWN:
+                mouse_button_down = true;
+                break;
+            case SDL_MOUSEBUTTONUP:
+                mouse_button_down = false;
+                break;
             case SDL_MOUSEMOTION:
-                process_mouse_move((float)event.motion.xrel,(float)event.motion.yrel,1);
+                    if(mouse_button_down){
+                        process_mouse_move((float)event.motion.xrel,(float)event.motion.yrel,1);
+                    }
                 break;
             case SDL_MOUSEWHEEL:
                 fov -= (float) event.wheel.y;
@@ -268,19 +277,15 @@ void update(void) {
     time = (float)SDL_GetTicks()/1000;
 
     glm_mat4_identity(model);
-    glm_mat4_identity(view);
-    glm_mat4_identity(projection);
-    
-    // lightPos[0] += 5 * cos(time) * delta_time;
-    // lightPos[2] += -5 * sin(time) * delta_time;
 
-
-    float angle = fmodf(time,360.0f);
     float p_angle = fov;
-    glm_make_rad(&angle);
     glm_make_rad(&p_angle);
-    glm_rotate(&model[0], angle, &axis[0]);
+    const float radius = 10.0f;
+    float camX = sin(time) * radius;
+    float camZ = cos(time) * radius;
+
     camera_look_at(&view);
+   
     glm_perspective(p_angle,(float)(window_width/window_height),0.1f,100.0f,projection);
     
     previous_frame_time = SDL_GetTicks();
@@ -313,9 +318,7 @@ void render(void) {
     set_vec3(obj_shader.shader_ID, "lightColor", light);
     set_vec3(obj_shader.shader_ID, "lightPos", lightPos);
     set_vec3(obj_shader.shader_ID, "viewPos", cameraPos);
-    //set_vec3(obj_shader.shader_ID, "material.ambient", mat.ambient);
-    // set_vec3(obj_shader.shader_ID, "material.diffuse", mat.diffuse);
-    set_vec3(obj_shader.shader_ID, "material.specular", mat.specular);
+
     set_float(obj_shader.shader_ID, "material.shininess", mat.shininess);
     set_int(obj_shader.shader_ID,"material.diffuse", 0);
     
