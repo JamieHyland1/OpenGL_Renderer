@@ -19,7 +19,7 @@ static int window_height = 600;
 bool mouse_button_down = false;
 unsigned int VBO;
 unsigned int cubeVAO, lightVAO;
-vec3 lightPos = {1.2f, 2.0f, -2.0f};
+vec3 lightPos = {-0.2f, 2.0f, -2.0f};
 vec3 lightScale = {0.42f,0.42f,0.42f};
 char* obj_shaders[2];
 char* light_shaders[2];
@@ -33,7 +33,7 @@ mat4 model,view,projection;
 shader_t obj_shader, light_shader;
 texture_t tex;
 texture_t tex2;
-vec3 axis = {0.5f,1.0f,0.0f};
+vec3 axis = {1.0f, 0.3f, 0.5f};
 
 vec3 cameraPos = {0.0f, 0.0f, 5.0f};
 vec3 up = {0.0f,1.0f,0.0f};
@@ -87,7 +87,18 @@ unsigned int indices[] = {
     0.5f, -0.5f, 0.0f,  0.0f, 1.0f,0.0f,
      0.0f,  0.5f, 0.5f,  0.0f, 0.0f,1.0f
     };
-
+vec3 cubePositions[] = {
+    { 0.0f,  0.0f,  -3.5f},
+    { 2.0f,  5.0f, -15.0f},
+    {-1.5f, -2.2f, -2.5f},
+    {-3.8f, -2.0f, -12.3f},
+    { 2.4f, -0.4f, -3.5f},
+    {-1.7f,  3.0f, -7.5f},
+    { 1.3f, -2.0f, -2.5f},
+    { 1.5f,  2.0f, -2.5f},
+    { 1.5f,  0.2f, -1.5f},
+    {-1.3f,  1.0f, -1.5f}
+};
 material_t mat;
 ///////////////////////////////////////////////////////////////////////////////
 // Global variables for execution status and renderer loop
@@ -129,7 +140,7 @@ int setup(void) {
     // window_width = full_screen_width;
     // window_height = full_screen_height;
     obj_shaders[0] = "./shaders/obj_vertex.glsl";
-    obj_shaders[1] = "./shaders/obj_frag.glsl";
+    obj_shaders[1] = "./shaders/obj_frag_point_light.glsl";
     light_shaders[0] = "./shaders/light_vertex.glsl";
     light_shaders[1] = "./shaders/light_frag.glsl";
 
@@ -213,10 +224,10 @@ int init_openGL(){
 
         glEnable(GL_DEPTH_TEST); 
         
-        //stbi_set_flip_vertically_on_load(true);
+        stbi_set_flip_vertically_on_load(true);
         
-        tex  = init_texture("./textures/container.jpg");
-        tex2 = init_texture("./textures/containerSpecular.jpg");
+        tex  = init_texture("./textures/container.png");
+        tex2 = init_texture("./textures/container2_specular.png");
 
         return 1;
     }else{
@@ -280,12 +291,10 @@ void update(void) {
 
     float p_angle = fov;
     glm_make_rad(&p_angle);
-    const float radius = 10.0f;
-    float camX = sin(time) * radius;
-    float camZ = cos(time) * radius;
+    
+    lightPos[2] = 2.5 * sin(time);
 
     camera_look_at(&view);
-   
     glm_perspective(p_angle,(float)(window_width/window_height),0.1f,100.0f,projection);
     
     previous_frame_time = SDL_GetTicks();
@@ -305,31 +314,47 @@ void render(void) {
     
     use_shader(obj_shader.shader_ID);
     vec3 light = {1.0f,1.0f,1.0f};
-    glm_rotate_y(&model[0], time, &model[0]);
-    
-    set_matrix(obj_shader.shader_ID,"model", model);
+    // glm_rotate_y(&model[0], time, &model[0]);
+    // glm_rotate_x(&model[0], -time, &model[0]);
     set_matrix(obj_shader.shader_ID,"view", view);
     set_matrix(obj_shader.shader_ID,"projection", projection);
+
+ 
 
     get_camera_position(&cameraPos);
     //printf("%f,%f,%f\n", cameraPos[0],cameraPos[1],cameraPos[2]);
     set_float(obj_shader.shader_ID,"time",time);
 
     set_vec3(obj_shader.shader_ID, "lightColor", light);
-    set_vec3(obj_shader.shader_ID, "lightPos", lightPos);
+    set_vec3(obj_shader.shader_ID, "light.direction", (vec3){-0.2f, -1.0f, -0.3f});
     set_vec3(obj_shader.shader_ID, "viewPos", cameraPos);
 
     set_float(obj_shader.shader_ID, "material.shininess", mat.shininess);
     set_int(obj_shader.shader_ID,"material.diffuse", 0);
+    set_int(obj_shader.shader_ID,"material.specular", 1);
     
-
+    //For directional Lights
     set_vec3(obj_shader.shader_ID, "light.ambient", (vec3){0.2f, 0.2f, 0.2f});
     set_vec3(obj_shader.shader_ID, "light.diffuse", (vec3){0.5f, 0.5f, 0.5f});
     set_vec3(obj_shader.shader_ID, "light.specular",(vec3){1.0f, 1.0f, 1.0f});
-   
-    glBindVertexArray(cubeVAO); 
-    glDrawArrays(GL_TRIANGLES, 0, 36);
 
+    //For point Lights
+    set_vec3(obj_shader.shader_ID, "light.position", lightPos);
+    set_float(obj_shader.shader_ID, "light.constant", 1.0f);
+    set_float(obj_shader.shader_ID, "light.linear", 0.09f);
+    set_float(obj_shader.shader_ID, "light.quadratic", 0.032f);
+
+    glBindVertexArray(cubeVAO); 
+
+    for(int i = 0; i < 10; i ++){
+        glm_mat4_identity(&model[0]);
+        glm_translate(&model[0], &cubePositions[i][0]);
+        float angle = i * 20.0f;
+        glm_rotate(&model[0], angle, &axis[0]);
+        set_matrix(obj_shader.shader_ID,"model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+    
     use_shader(light_shader.shader_ID);
 
     glm_mat4_identity(model);
