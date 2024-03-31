@@ -23,6 +23,10 @@ unsigned int cubeVAO, lightVAO;
 vec3 lightPos[] = { {-0.2f, 2.0f, -2.0f},
                     {-1.2f, 0.0f, -1.0f},
                     {0.2f, -2.0f, 2.0f},};
+
+vec3 lightCol[] = { {1.0f, 0.0f, 0.0f},
+                    {0.0f, 1.0f, 0.0f},
+                    {0.0f, 0.0f, 1.0f}};
 vec3 lightDir = {-0.2f, 2.0f, -2.0f};
 vec3 lightScale = {0.42f,0.42f,0.42f};
 vec3 spotLightPos = {0.0f,0.0f,0.0f};
@@ -145,10 +149,10 @@ int setup(void) {
     set_material_shininess(&mat, 32.0f);
 
    
-    // int full_screen_width = displayMode.w;
-    // int full_screen_height = displayMode.h;
-    // window_width = full_screen_width;
-    // window_height = full_screen_height;
+    int full_screen_width = displayMode.w;
+    int full_screen_height = displayMode.h;
+    window_width = full_screen_width;
+    window_height = full_screen_height;
     obj_shaders[0] = "./shaders/obj_vertex.glsl";
     obj_shaders[1] = "./shaders/obj_frag.glsl";
     light_shaders[0] = "./shaders/light_vertex.glsl";
@@ -311,7 +315,8 @@ void update(void) {
     get_camera_direction(&spotLightDir);
 
     
-    lightPos[0][2] = 2.5 * sin(time);
+    lightPos[2][1] = 2.5 * sin(time);
+    lightPos[2][2] = 2.5 * cos(time*2);
     
     camera_look_at(&view);
     glm_perspective(p_angle,(float)(window_width/window_height),0.1f,100.0f,projection);
@@ -358,15 +363,33 @@ void render(void) {
     set_vec3(obj_shader.shader_ID, "light.direction", lightDir);
 
     //For point Lights
+    
+        set_vec3(obj_shader.shader_ID, "pointLights[0].color", lightCol[0]);
+        set_vec3(obj_shader.shader_ID, "pointLights[0].ambient", (vec3){0.2f, 0.82f, 0.2f});
+        set_vec3(obj_shader.shader_ID, "pointLights[0].diffuse", (vec3){0.5f, 0.5f, 0.5f});
+        set_vec3(obj_shader.shader_ID, "pointLights[0].specular",(vec3){1.0f, 0.0f, 1.0f});
+        set_vec3(obj_shader.shader_ID, "pointLights[0].position", lightPos[0]);
+        set_float(obj_shader.shader_ID, "pointLights[0].constant", 1.0f);
+        set_float(obj_shader.shader_ID, "pointLights[0].linear", 0.09f);
+        set_float(obj_shader.shader_ID, "pointLights[0].quadratic", 0.032f);
+    
+        set_vec3(obj_shader.shader_ID, "pointLights[1].color", lightCol[1]);
+        set_vec3(obj_shader.shader_ID, "pointLights[1].ambient", (vec3){0.25f, 0.02f, 0.02f});
+        set_vec3(obj_shader.shader_ID, "pointLights[1].diffuse", (vec3){0.05f, 0.5f, 0.5f});
+        set_vec3(obj_shader.shader_ID, "pointLights[1].specular",(vec3){1.0f, 1.0f, 1.0f});
+        set_vec3(obj_shader.shader_ID, "pointLights[1].position", lightPos[1]);
+        set_float(obj_shader.shader_ID, "pointLights[1].constant", 1.0f);
+        set_float(obj_shader.shader_ID, "pointLights[1].linear", 0.09f);
+        set_float(obj_shader.shader_ID, "pointLights[1].quadratic", 0.032f);
 
-    set_vec3(obj_shader.shader_ID, "pLight.color", (vec3){1.0,0.4,0.0});
-    set_vec3(obj_shader.shader_ID, "pLight.ambient", (vec3){0.2f, 0.2f, 0.2f});
-    set_vec3(obj_shader.shader_ID, "pLight.diffuse", (vec3){0.5f, 0.5f, 0.5f});
-    set_vec3(obj_shader.shader_ID, "pLight.specular",(vec3){1.0f, 1.0f, 1.0f});
-    set_vec3(obj_shader.shader_ID, "pLight.position", lightPos);
-    set_float(obj_shader.shader_ID, "pLight.constant", 1.0f);
-    set_float(obj_shader.shader_ID, "pLight.linear", 0.09f);
-    set_float(obj_shader.shader_ID, "pLight.quadratic", 0.032f);
+        set_vec3(obj_shader.shader_ID, "pointLights[2].color", lightCol[2]);
+        set_vec3(obj_shader.shader_ID, "pointLights[2].ambient", (vec3){0.52f, 0.52f, 0.52f});
+        set_vec3(obj_shader.shader_ID, "pointLights[2].diffuse", (vec3){0.5f, 0.25f, 0.5f});
+        set_vec3(obj_shader.shader_ID, "pointLights[2].specular",(vec3){1.0f, 1.0f, 1.0f});
+        set_vec3(obj_shader.shader_ID, "pointLights[2].position", lightPos[2]);
+        set_float(obj_shader.shader_ID, "pointLights[2].constant", 1.0f);
+        set_float(obj_shader.shader_ID, "pointLights[2].linear", 0.9f);
+        set_float(obj_shader.shader_ID, "pointLights[2].quadratic", 0.032f);
     
 
     //For spot Light
@@ -393,17 +416,18 @@ void render(void) {
     }
     
     use_shader(light_shader.shader_ID);
-
-    glm_mat4_identity(model);
     set_matrix(light_shader.shader_ID,"view", view);
     set_matrix(light_shader.shader_ID,"projection", projection);
-    glm_translate(&model[0], &lightPos[0]);
-    glm_scale(&model[0], &lightScale[0]);
-    set_matrix(light_shader.shader_ID,"model", model);
-    set_vec3(light_shader.shader_ID, "lightColor", (vec3){1.0,0.4,0.0});
-   
-    glBindVertexArray(lightVAO); 
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    for(int i = 0; i < 3; i ++){
+        glm_mat4_identity(model);
+        glm_translate(&model[0], &lightPos[i][0]);
+        glm_scale(&model[0], &lightScale[0]);
+        set_matrix(light_shader.shader_ID,"model", model);
+        set_vec3(light_shader.shader_ID, "lightColor", lightCol[i]);
+        
+        glBindVertexArray(lightVAO); 
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
     
 
 

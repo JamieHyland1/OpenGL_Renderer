@@ -30,3 +30,20 @@ Once I got the cube rotating I began writing my own camera class, again followin
 ![finished cubes](https://github.com/JamieHyland1/OpenGL_Renderer/assets/15105021/583b6409-dcce-4f8c-883f-dc8313584da5)
 
 With this I am finished the first getting started chapter of [Learn OpenGL's](https://learnopengl.com/) tutorials. Pretty happy with what I've got so far, I still have waaaaaaay more to go but I'm happy, progress is slow but steady. I think I still have to do some work on understanding `VAO's` and `VBO's` and all that, its a weird concept to get my head around if I'm honest. Next Ill start learning lighting >:D
+
+# Lights Lights Lights! [31/03/24]
+So took a break for a bit because work was hectic however! We. Are. Back! And this time I'm here to show off some dazzling lights! Honestly this was one of the funnest parts of the [Learn OpenG](https://learnopengl.com/) tutorials, felt finally like we had removed all the setup and now we're getting straight into shaders and fun things.
+![First Light](https://github.com/JamieHyland1/OpenGL_Renderer/assets/15105021/2ae1dee7-a856-482c-a698-60dce90f276e)
+There was a lot of tweaking shaders in this section of the tutorial, almost to an annoying degree lol having to recompile my code every time I altered a value in the lighting calculations was frustrating, I almost paused this section of the tutorials to implement a hot reloading system so I could see my changes to shaders on the fly, but I'll leave that to my next update!
+
+![weird effect](https://github.com/JamieHyland1/OpenGL_Renderer/assets/15105021/39d83f8d-8acd-4493-b066-a810fe785d12)
+
+
+
+I focused on implementing 3 main types of lights Directional lights (Sun), Point lights (light bulb), and spot lights(flash lights, lamps) and was surprised at how similar they are and at the same time completely different in the logic to implement them! You can see above an insteresting effect I ended up with when trying to implement the spotlight lol. I was finally able to get them all working, refactiored the code to make it easier to use and implemented a better first person controller and fixed a finicky bug with my fov!  
+
+![final light scene](https://github.com/JamieHyland1/OpenGL_Renderer/assets/15105021/8c6e12b4-f540-4be4-94e8-2a7756138beb)
+
+Next I think I'll focus on adding some much needed quality of life features if I'm to keep working on this renderer!
+
+
