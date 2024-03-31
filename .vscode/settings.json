@@ -14,6 +14,7 @@
         "texture.h": "c",
         "shader.h": "c",
         "cglm.h": "c",
-        "camera.h": "c"
+        "camera.h": "c",
+        "material.h": "c"
     }
 }

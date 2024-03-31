@@ -88,6 +88,10 @@ void set_float (int id, char* name, float value){
     glUniform1f(glGetUniformLocation(id,name),value);
 }
 
+void set_vec3 (int id, char* name, vec3 color){
+    glUniform3f(glGetUniformLocation(id, name),color[0],color[1],color[2]);
+}
+
 void set_matrix(int id, char* name, mat4 mat){
     glUniformMatrix4fv(glGetUniformLocation(id, name),1,GL_FALSE,(float *)mat);
 }
