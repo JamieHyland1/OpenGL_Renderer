@@ -19,8 +19,18 @@ static int window_height = 600;
 bool mouse_button_down = false;
 unsigned int VBO;
 unsigned int cubeVAO, lightVAO;
-vec3 lightPos = {-0.2f, 2.0f, -2.0f};
+
+vec3 lightPos[] = { {-0.2f, 2.0f, -2.0f},
+                    {-1.2f, 0.0f, -1.0f},
+                    {0.2f, -2.0f, 2.0f},};
+vec3 lightDir = {-0.2f, 2.0f, -2.0f};
 vec3 lightScale = {0.42f,0.42f,0.42f};
+vec3 spotLightPos = {0.0f,0.0f,0.0f};
+vec3 spotLightDir = {0.0f,0.0f,0.0f};
+float spotLightCutOffInner = 12.0f;
+float spotLightCutOffOuter = 15.0f;
+
+
 char* obj_shaders[2];
 char* light_shaders[2];
 unsigned int EBO;
@@ -140,7 +150,7 @@ int setup(void) {
     // window_width = full_screen_width;
     // window_height = full_screen_height;
     obj_shaders[0] = "./shaders/obj_vertex.glsl";
-    obj_shaders[1] = "./shaders/obj_frag_point_light.glsl";
+    obj_shaders[1] = "./shaders/obj_frag.glsl";
     light_shaders[0] = "./shaders/light_vertex.glsl";
     light_shaders[1] = "./shaders/light_frag.glsl";
 
@@ -199,7 +209,6 @@ int init_openGL(){
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
         glBindVertexArray(cubeVAO);
-     
         // position attribute
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
@@ -288,12 +297,22 @@ void update(void) {
     time = (float)SDL_GetTicks()/1000;
 
     glm_mat4_identity(model);
-
+    spotLightCutOffInner = 12.5f;
+    spotLightCutOffOuter = 17.5f;
     float p_angle = fov;
     glm_make_rad(&p_angle);
-    
-    lightPos[2] = 2.5 * sin(time);
 
+    glm_make_rad(&spotLightCutOffInner);
+    spotLightCutOffInner = cosf(spotLightCutOffInner);
+
+    glm_make_rad(&spotLightCutOffOuter);
+    spotLightCutOffOuter = cosf(spotLightCutOffOuter);
+    get_camera_position(&spotLightPos);
+    get_camera_direction(&spotLightDir);
+
+    
+    lightPos[0][2] = 2.5 * sin(time);
+    
     camera_look_at(&view);
     glm_perspective(p_angle,(float)(window_width/window_height),0.1f,100.0f,projection);
     
@@ -314,15 +333,14 @@ void render(void) {
     
     use_shader(obj_shader.shader_ID);
     vec3 light = {1.0f,1.0f,1.0f};
-    // glm_rotate_y(&model[0], time, &model[0]);
-    // glm_rotate_x(&model[0], -time, &model[0]);
+    
+
     set_matrix(obj_shader.shader_ID,"view", view);
     set_matrix(obj_shader.shader_ID,"projection", projection);
 
- 
+
 
     get_camera_position(&cameraPos);
-    //printf("%f,%f,%f\n", cameraPos[0],cameraPos[1],cameraPos[2]);
     set_float(obj_shader.shader_ID,"time",time);
 
     set_vec3(obj_shader.shader_ID, "lightColor", light);
@@ -334,15 +352,34 @@ void render(void) {
     set_int(obj_shader.shader_ID,"material.specular", 1);
     
     //For directional Lights
-    set_vec3(obj_shader.shader_ID, "light.ambient", (vec3){0.2f, 0.2f, 0.2f});
+    set_vec3(obj_shader.shader_ID, "light.ambient", (vec3){0.02f, 0.02f, 0.02f});
     set_vec3(obj_shader.shader_ID, "light.diffuse", (vec3){0.5f, 0.5f, 0.5f});
     set_vec3(obj_shader.shader_ID, "light.specular",(vec3){1.0f, 1.0f, 1.0f});
+    set_vec3(obj_shader.shader_ID, "light.direction", lightDir);
 
     //For point Lights
-    set_vec3(obj_shader.shader_ID, "light.position", lightPos);
-    set_float(obj_shader.shader_ID, "light.constant", 1.0f);
-    set_float(obj_shader.shader_ID, "light.linear", 0.09f);
-    set_float(obj_shader.shader_ID, "light.quadratic", 0.032f);
+
+    set_vec3(obj_shader.shader_ID, "pLight.color", (vec3){1.0,0.4,0.0});
+    set_vec3(obj_shader.shader_ID, "pLight.ambient", (vec3){0.2f, 0.2f, 0.2f});
+    set_vec3(obj_shader.shader_ID, "pLight.diffuse", (vec3){0.5f, 0.5f, 0.5f});
+    set_vec3(obj_shader.shader_ID, "pLight.specular",(vec3){1.0f, 1.0f, 1.0f});
+    set_vec3(obj_shader.shader_ID, "pLight.position", lightPos);
+    set_float(obj_shader.shader_ID, "pLight.constant", 1.0f);
+    set_float(obj_shader.shader_ID, "pLight.linear", 0.09f);
+    set_float(obj_shader.shader_ID, "pLight.quadratic", 0.032f);
+    
+
+    //For spot Light
+    set_vec3(obj_shader.shader_ID, "sLight.ambient", (vec3){0.1f, 0.1f, 0.1f});
+    set_vec3(obj_shader.shader_ID, "sLight.diffuse", (vec3){0.8f, 0.8f, 0.8f});
+    set_vec3(obj_shader.shader_ID, "sLight.specular",(vec3){1.0f, 1.0f, 1.0f});
+    set_float(obj_shader.shader_ID, "sLight.constant", 1.0f);
+    set_float(obj_shader.shader_ID, "sLight.linear", 0.09f);
+    set_float(obj_shader.shader_ID, "sLight.quadratic", 0.032f);
+    set_vec3(obj_shader.shader_ID, "sLight.position", spotLightPos);
+    set_vec3(obj_shader.shader_ID, "sLight.direction", spotLightDir);
+    set_float(obj_shader.shader_ID, "sLight.cutOff", spotLightCutOffInner);
+    set_float(obj_shader.shader_ID, "sLight.outerCutOff", spotLightCutOffOuter);
 
     glBindVertexArray(cubeVAO); 
 
@@ -363,7 +400,7 @@ void render(void) {
     glm_translate(&model[0], &lightPos[0]);
     glm_scale(&model[0], &lightScale[0]);
     set_matrix(light_shader.shader_ID,"model", model);
-    set_vec3(light_shader.shader_ID, "lightColor", light);
+    set_vec3(light_shader.shader_ID, "lightColor", (vec3){1.0,0.4,0.0});
    
     glBindVertexArray(lightVAO); 
     glDrawArrays(GL_TRIANGLES, 0, 36);

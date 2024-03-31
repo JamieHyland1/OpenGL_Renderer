@@ -115,10 +115,13 @@ void updateCameraVectors(float delta_time){
     camera.cam_vel[1] = 0;
     camera.cam_vel[2] = 0;
     
+    
 }
 
 void get_camera_position( vec3* vec){
-    for (int i = 0; i < 3; i++) {
-        (*vec)[i] = camera.position[i];
-    }
+    glm_vec3_copy(&camera.position[0],vec[0]);
+}
+
+void get_camera_direction( vec3* vec){
+    glm_vec3_copy(&camera.direction[0],vec[0]);
 }
