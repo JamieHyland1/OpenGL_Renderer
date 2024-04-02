@@ -10,7 +10,11 @@
 #include "shader.h"
 #include "texture.h"
 #include "camera.h"
+#include "windows.h"
 #include "material.h"
+#include "fileapi.h"
+#include "synchapi.h"
+#include "pthread.h"
 
 
 //TODO: clean up all these variables into a display file or some sort of file that handles the settings of the renderer
@@ -19,7 +23,7 @@ static int window_height = 600;
 bool mouse_button_down = false;
 unsigned int VBO;
 unsigned int cubeVAO, lightVAO;
-
+DWORD shaderStatus;
 vec3 lightPos[] = { {-0.2f, 2.0f, -2.0f},
                     {-1.2f, 0.0f, -1.0f},
                     {0.2f, -2.0f, 2.0f},};
@@ -48,7 +52,7 @@ shader_t obj_shader, light_shader;
 texture_t tex;
 texture_t tex2;
 vec3 axis = {1.0f, 0.3f, 0.5f};
-
+HANDLE dwChangeHandles, files; 
 vec3 cameraPos = {0.0f, 0.0f, 5.0f};
 vec3 up = {0.0f,1.0f,0.0f};
 
@@ -119,9 +123,11 @@ material_t mat;
 ///////////////////////////////////////////////////////////////////////////////
 bool is_running = false;
 int previous_frame_time = 0;
+float poll_timer = 0;
 static float delta_time = 0; 
 #define FPS 144
 #define FRAME_TARGET_TIME  (1000 / FPS)
+#define SHADER_POLL_TIME  (2500/1000)
 static SDL_Window* window = NULL;
 SDL_GLContext context = NULL;
 static SDL_Renderer* renderer = NULL;
@@ -133,7 +139,7 @@ int setup(void) {
     fprintf(stderr, "Error initializing SDL window");
     return false;
     }
-    
+    pthread_t thread1;
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
@@ -149,17 +155,19 @@ int setup(void) {
     set_material_shininess(&mat, 32.0f);
 
    
-    int full_screen_width = displayMode.w;
-    int full_screen_height = displayMode.h;
-    window_width = full_screen_width;
-    window_height = full_screen_height;
+    // int full_screen_width = displayMode.w;
+    // int full_screen_height = displayMode.h;
+    // window_width = full_screen_width;
+    // window_height = full_screen_height;
+
     obj_shaders[0] = "./shaders/obj_vertex.glsl";
     obj_shaders[1] = "./shaders/obj_frag.glsl";
     light_shaders[0] = "./shaders/light_vertex.glsl";
     light_shaders[1] = "./shaders/light_frag.glsl";
 
     stbi_set_flip_vertically_on_load(true);
-
+    
+    
     
     window = SDL_CreateWindow(
         "The window into Jamie's madness",
@@ -247,6 +255,39 @@ int init_openGL(){
         printf("error initialising shaders\n");
     }
     return false;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Poll shader directory for changes to shaders and reload if necessary
+///////////////////////////////////////////////////////////////////////////////
+void process_shader_changes(void){
+        dwChangeHandles =  FindFirstChangeNotificationA("./shaders/",false,FILE_NOTIFY_CHANGE_LAST_WRITE);
+        shaderStatus = WaitForSingleObject(dwChangeHandles,200);
+        switch(shaderStatus){
+            case WAIT_OBJECT_0:
+                printf("Wait object 0\n");
+                WIN32_FIND_DATA FindFileData;
+                files = FindFirstFileA("./shaders/*.glsl",&FindFileData);
+                if(files == INVALID_HANDLE_VALUE){
+                    printf("couldnt find files :( %ld\n",GetLastError());
+                }else{
+                    while (FindNextFileA(files, &FindFileData) != 0){
+                        printf("file changed: %s\n",FindFileData.cFileName);
+                    }
+                    FindClose(files);
+                }
+            break;
+            case WAIT_ABANDONED:
+               // printf("Wait abandoned\n");
+            break;
+            case WAIT_TIMEOUT:
+               // printf("Wait timeout\n");
+            break;
+            case WAIT_FAILED:
+                //printf("wait failed\n");
+            break;
+    }
+
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Poll system events and handle keyboard input
@@ -450,6 +491,7 @@ int main(int argc, char* args[]){
     is_running = init_openGL();
     glViewport(0, 0, window_width, window_height);
     while (is_running) {
+        process_shader_changes();
         process_input();
         update();
         render();

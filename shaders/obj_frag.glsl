@@ -13,6 +13,8 @@ struct Directional_Light{
     vec3 specular;
 };
 
+  
+
 struct Point_Light{
     vec3 color;
     vec3 position;  
@@ -48,6 +50,7 @@ uniform float time;
 uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
+
 
 out vec4 FragColor;
 in vec2 TexCoords;
@@ -106,7 +109,7 @@ vec3 calcSpotLight(Spot_Light sLight, vec3 norm, vec3 FragPos, vec3 viewDir){
     float intensity = clamp((theta - sLight.outerCutOff) / epsilon, 0.0, 1.0);   
     vec4 result;
         vec3 ambient = sLight.ambient * vec3(texture(material.diffuse, TexCoords));
-        
+        int x =4;
         // diffuse 
         float diff = max(dot(norm, lightDir), 0.0);
         vec3 diffuse = sLight.diffuse * diff * vec3(texture(material.diffuse, TexCoords));
