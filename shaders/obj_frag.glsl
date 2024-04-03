@@ -13,8 +13,18 @@ struct Directional_Light{
     vec3 specular;
 };
 
-  
 
+struct Point_Light{
+    vec3 color;
+    vec3 position;  
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+	
+    float constant;
+    float linear;
+    float quadratic;
+}; 
 struct Point_Light{
     vec3 color;
     vec3 position;  
@@ -29,7 +39,7 @@ struct Point_Light{
 
 struct Spot_Light{
     vec3 position;
-    vec3 direction;
+    vec3 direction; 
     float cutOff;
     float outerCutOff;
     vec3 ambient;
@@ -120,7 +130,7 @@ vec3 calcSpotLight(Spot_Light sLight, vec3 norm, vec3 FragPos, vec3 viewDir){
         vec3 specular = sLight.specular * spec * vec3(texture(material.diffuse, TexCoords));
         
         // attenuation
-        float distance    = length(sLight.position - FragPos);
+        float distance    = length(sLight.position - FragPos); 
         float attenuation = 1.0 / (sLight.constant + sLight.linear * distance + sLight.quadratic * (distance * distance));    
 
         // ambient  *= attenuation;
@@ -128,12 +138,36 @@ vec3 calcSpotLight(Spot_Light sLight, vec3 norm, vec3 FragPos, vec3 viewDir){
         specular  *= attenuation;   
 
         diffuse *= intensity;
-        diffuse *= intensity;
-            
+        diffuse *=  intensity;
+             
         result = vec4(vec3(ambient + diffuse + specular),1.0f);
+
     
     return vec3(result);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void main()
 {

@@ -118,6 +118,8 @@ vec3 cubePositions[] = {
     {-1.3f,  1.0f, -1.5f}
 };
 material_t mat;
+OVERLAPPED  overlapped = {0};
+BYTE notifBuffer[4096];
 ///////////////////////////////////////////////////////////////////////////////
 // Global variables for execution status and renderer loop
 ///////////////////////////////////////////////////////////////////////////////
@@ -131,6 +133,55 @@ static float delta_time = 0;
 static SDL_Window* window = NULL;
 SDL_GLContext context = NULL;
 static SDL_Renderer* renderer = NULL;
+
+
+HANDLE shader_handle;
+
+
+
+void CALLBACK ShaderChangedCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped) {
+    printf("file changed in shader directory %ld %ld\n", dwErrorCode, dwNumberOfBytesTransfered);
+    BYTE* p = notifBuffer;
+    FILE_NOTIFY_INFORMATION* info = SDL_reinterpret_cast<FILE_NOTIFY_INFORMATION*>(p);
+   
+    CloseHandle(shader_handle);
+    CloseHandle(overlapped.hEvent);
+    poll_shaders();
+}
+
+void poll_shaders(){
+    shader_handle = CreateFileA("./shaders/",(GENERIC_READ | GENERIC_WRITE),(FILE_SHARE_READ | FILE_SHARE_READ),NULL, ( OPEN_EXISTING) ,FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
+    if(shader_handle == INVALID_HANDLE_VALUE){
+        printf("Error: Unable to open directory.\n");
+        return;
+    }
+
+
+    
+    
+    overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (overlapped.hEvent == NULL) {
+        printf("Error creating event object.\n");
+        CloseHandle(shader_handle);
+        return;
+    }
+    bool c = ReadDirectoryChangesW(shader_handle,notifBuffer, sizeof(notifBuffer),FALSE,(FILE_NOTIFY_CHANGE_LAST_WRITE), NULL, &overlapped, &ShaderChangedCallback);
+    printf("bool %d", c);
+    if(!c){
+        printf("Error initiating asynchronous directory monitor.\n");
+        CloseHandle(overlapped.hEvent);
+        CloseHandle(shader_handle);
+        
+    }
+}
+
+
+
+
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Setup function to initialize variables and game objects
 ///////////////////////////////////////////////////////////////////////////////
@@ -206,6 +257,9 @@ int setup(void) {
 
 
     init_camera(cameraPos,up);
+    
+    poll_shaders();
+    
     return true; 
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -244,7 +298,7 @@ int init_openGL(){
 
 
         glEnable(GL_DEPTH_TEST); 
-        
+        // poll_shaders();
         stbi_set_flip_vertically_on_load(true);
         
         tex  = init_texture("./textures/container.png");
@@ -261,34 +315,11 @@ int init_openGL(){
 // Poll shader directory for changes to shaders and reload if necessary
 ///////////////////////////////////////////////////////////////////////////////
 void process_shader_changes(void){
-        dwChangeHandles =  FindFirstChangeNotificationA("./shaders/",false,FILE_NOTIFY_CHANGE_LAST_WRITE);
-        shaderStatus = WaitForSingleObject(dwChangeHandles,200);
-        switch(shaderStatus){
-            case WAIT_OBJECT_0:
-                printf("Wait object 0\n");
-                WIN32_FIND_DATA FindFileData;
-                files = FindFirstFileA("./shaders/*.glsl",&FindFileData);
-                if(files == INVALID_HANDLE_VALUE){
-                    printf("couldnt find files :( %ld\n",GetLastError());
-                }else{
-                    while (FindNextFileA(files, &FindFileData) != 0){
-                        printf("file changed: %s\n",FindFileData.cFileName);
-                    }
-                    FindClose(files);
-                }
-            break;
-            case WAIT_ABANDONED:
-               // printf("Wait abandoned\n");
-            break;
-            case WAIT_TIMEOUT:
-               // printf("Wait timeout\n");
-            break;
-            case WAIT_FAILED:
-                //printf("wait failed\n");
-            break;
-    }
+        WaitForSingleObjectEx(shader_handle,0,TRUE);
 
 }
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Poll system events and handle keyboard input
 ///////////////////////////////////////////////////////////////////////////////
@@ -340,7 +371,7 @@ void update(void) {
     delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
 
     time = (float)SDL_GetTicks()/1000;
-
+   
     glm_mat4_identity(model);
     spotLightCutOffInner = 12.5f;
     spotLightCutOffOuter = 17.5f;
