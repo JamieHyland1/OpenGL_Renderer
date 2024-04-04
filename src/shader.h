@@ -5,16 +5,26 @@
 #include <stdbool.h>
 #include <C:\SDL2\include\SDL.h>
 #include "../include/cglm/cglm.h"
+#include "fileapi.h"
+#include "synchapi.h"
 typedef struct{
     const GLchar* vertex_source;
     const GLchar* fragment_source;
-    unsigned int shader_ID;
+    const GLchar* path_to_frag;
+    const GLchar* path_to_vert;
+    GLuint shader_ID;
     unsigned int vertex_shader_ID;
     unsigned int fragment_shader_ID;
 }shader_t;
 
-bool init_shader(shader_t* shader, char* shader_filenames[2]);
+typedef enum {VERTEX,FRAGMENT}Shader_Type;
+bool init_shader(shader_t* shader, char* filename, Shader_Type type);
+bool link_shader(shader_t* shader);
+bool reload_shader(shader_t* shader);
+void poll_shaders();
+void CALLBACK ShaderChangedCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped);
 void use_shader(int id);
+void load_error_shader(shader_t* shader, shader_t* err);
 void set_bool  (int id, char* name, bool value);
 void set_int   (int id, char* name, int value);
 void set_float (int id, char* name, float value);

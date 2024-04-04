@@ -33,12 +33,12 @@ With this I am finished the first getting started chapter of [Learn OpenGL's](ht
 
 # Lights Lights Lights! [31/03/24]
 So took a break for a bit because work was hectic however! We. Are. Back! And this time I'm here to show off some dazzling lights! Honestly this was one of the funnest parts of the [Learn OpenG](https://learnopengl.com/) tutorials, felt finally like we had removed all the setup and now we're getting straight into shaders and fun things.
+
 ![First Light](https://github.com/JamieHyland1/OpenGL_Renderer/assets/15105021/2ae1dee7-a856-482c-a698-60dce90f276e)
+
 There was a lot of tweaking shaders in this section of the tutorial, almost to an annoying degree lol having to recompile my code every time I altered a value in the lighting calculations was frustrating, I almost paused this section of the tutorials to implement a hot reloading system so I could see my changes to shaders on the fly, but I'll leave that to my next update!
 
 ![weird effect](https://github.com/JamieHyland1/OpenGL_Renderer/assets/15105021/39d83f8d-8acd-4493-b066-a810fe785d12)
-
-
 
 I focused on implementing 3 main types of lights Directional lights (Sun), Point lights (light bulb), and spot lights(flash lights, lamps) and was surprised at how similar they are and at the same time completely different in the logic to implement them! You can see above an insteresting effect I ended up with when trying to implement the spotlight lol. I was finally able to get them all working, refactiored the code to make it easier to use and implemented a better first person controller and fixed a finicky bug with my fov!  
 
@@ -46,4 +46,18 @@ I focused on implementing 3 main types of lights Directional lights (Sun), Point
 
 Next I think I'll focus on adding some much needed quality of life features if I'm to keep working on this renderer!
 
+# Hot reloading [04/04/24]
+I diiiiiiiiiiiiiiiiiiiiiiiiiid it! Honestly what I thought would be a somewhat quick and easy task to include before I start working on adding 3D models from blender into my renderer was hot reloading. When working on basic lighting, I was getting quite annoyed having to constantly recompile my code just to see a difference in the vertex or fragment shaders, so before I continued I wanted to add this feature in so I could iterate on my shaders in a more painless manner. 
+
+So I got the basic premise from [Anton Gerdelans](https://antongerdelan.net/opengl/shader_hot_reload.html) tutorial on hot reloading, and the basic algorithim is as follows:
+1. Monitor the directory for wherever your shader files are
+2. Once a change is detected created a new shader with the updated shader file 
+3. If no errors were encountered when creating your new shader, destroy the old one
+4. Replace it with your new shader!
+
+I won't go into much more detail you can see the code in the repo, however, I did add one more step to the process copying something I noticed that Unity does when handling its shaders, I created a simple magenta shader for errors, and defined this shader as a sort of fallback error shader. If the program on start up or when noticing a change in a shader tries to load it into memory and encounters an error due to syntax or anything else, it simple uses this magenta shader instead so the program doesnt crash and I recieve the relevant information for the issue in the console. Its super handy! I wont even go into the hassle I had digging through the windows file api trying to get this to work *(I'll have to add hot reloading to work on mac and linux at some point but not now :/)*. Anyway here it is! 
+
+![hot_reloading](https://github.com/JamieHyland1/OpenGL_Renderer/assets/15105021/1f5d18cb-ba42-4c1c-926a-38b418cb54cb)
+
+I was also thinking of adding some sort of GUI to change uniforms and parameters in real time in the program, but after this I might just continue with [Learn OpenG](https://learnopengl.com/) tutorials, who knows?! I guess we'll find out in the next post :) If anyone actually reads this I appreciate it!
 
