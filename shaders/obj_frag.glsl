@@ -12,7 +12,7 @@ struct Directional_Light{
     vec3 diffuse;
     vec3 specular;
 };
-  test
+
 struct Point_Light{
     vec3 color; 
     vec3 position;  
@@ -138,7 +138,7 @@ vec3 calcSpotLight(Spot_Light sLight, vec3 norm, vec3 FragPos, vec3 viewDir){
 
         diffuse *= intensity;  
         diffuse *=  intensity;
-             
+
         result = vec4(vec3(ambient + diffuse + specular),1.0f);
 
     
@@ -147,7 +147,6 @@ vec3 calcSpotLight(Spot_Light sLight, vec3 norm, vec3 FragPos, vec3 viewDir){
 
 void main()
 {
-    
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 norm = normalize(Normal);
     vec3 result = calcDirectionalLight(light, norm, viewDir);
@@ -155,6 +154,5 @@ void main()
         result += calcPointLight(pointLights[i], norm, FragPos, viewDir); 
     result += calcSpotLight(sLight, norm, FragPos, viewDir);
 
-
-    FragColor = vec4(result, 1.0);
+    FragColor = vec4( result, 1.0);
 }

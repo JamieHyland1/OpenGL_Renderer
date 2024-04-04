@@ -7,12 +7,13 @@
 #include "shader.h"
 #include "../include/cglm/cglm.h"
 
+
 ///////////////////////////////////
 // This class handles shaders
 // specifically initializing  them,  
 // using them and passing various uniforms at runtime 
 ///////////////////////////////////
-bool init_shader(shader_t* shader, char* filename, Shader_Type type){
+bool init_shader(shader_t* shader,  GLchar* filename, Shader_Type type){
     if(type == VERTEX){
         shader->vertex_source   = get_shader_source(filename);
         shader->path_to_vert = filename;
@@ -56,8 +57,6 @@ bool init_shader(shader_t* shader, char* filename, Shader_Type type){
     glAttachShader(shader->shader_ID,shader->vertex_shader_ID);
     glAttachShader(shader->shader_ID,shader->fragment_shader_ID);
 
-   
-
     return true;
 }
 bool link_shader(shader_t* shader){
@@ -80,21 +79,25 @@ bool link_shader(shader_t* shader){
 
 bool reload_shader(shader_t* shader){
     shader_t new_shader;
-    Shader_Type frag = FRAGMENT;
-    Shader_Type vert = VERTEX;
-   // printf("yatta! %s\n", shader->fragment_source);
-  //  printf("yatta! %s\n", shader->vertex_source);
-    if(!init_shader(&new_shader, shader->path_to_frag,FRAGMENT))
+    if(!init_shader(&new_shader,   (char*)shader->path_to_frag,FRAGMENT))
         return false;
-    if(!init_shader(&new_shader, shader->path_to_vert,VERTEX))
+    if(!init_shader(&new_shader, (char*)shader->path_to_vert,VERTEX))
         return false;
     if(!link_shader(&new_shader))
         return false;
     
- //   printf("yatta!\n");
-    glDeleteProgram(&shader->shader_ID);
+    glDeleteProgram((GLuint)shader->shader_ID);
     shader->shader_ID = new_shader.shader_ID;
+    return true;
+}
 
+void load_error_shader(shader_t* shader, shader_t* err){
+    glDeleteProgram((GLuint)shader->shader_ID);
+    shader->shader_ID = err->shader_ID;
+     init_shader(err, "./shaders/ERROR_FRAG.glsl",   FRAGMENT);
+    init_shader(err, "./shaders/ERROR_VERTEX.glsl", VERTEX);
+    link_shader(err);
+    return true;
 }
 void use_shader(int id){
     glUseProgram(id);
@@ -124,7 +127,6 @@ GLchar* get_shader_source(char* filename){
     GLchar* buffer = NULL;
     size_t size = 0;
     FILE *fp = fopen(filename,"rb");
-    
     if(fp){
         fseek(fp,0,SEEK_END);
         size = ftell(fp);
@@ -137,3 +139,4 @@ GLchar* get_shader_source(char* filename){
     printf("something went wrong\n");
     return NULL;
 }
+

@@ -54,7 +54,7 @@ unsigned int shaderProgram;
 float time = 0;
 float fov = 45.0f;
 mat4 model,view,projection;
-shader_t obj_shader, light_shader;
+shader_t error_shader;
 shader_t shaders[NUM_SHADERS];
 texture_t tex;
 texture_t tex2;
@@ -132,76 +132,12 @@ BYTE notifBuffer[4096];
 ///////////////////////////////////////////////////////////////////////////////
 bool is_running = false;
 int previous_frame_time = 0;
-float poll_timer = 0;
 static float delta_time = 0; 
 
 static SDL_Window* window = NULL;
 SDL_GLContext context = NULL;
 static SDL_Renderer* renderer = NULL;
-
-
 HANDLE shader_handle;
-
-
-
-void CALLBACK ShaderChangedCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped) {
-    if(dwErrorCode == ERROR_SUCCESS){
-        FILE_NOTIFY_INFORMATION* pNotify = (FILE_NOTIFY_INFORMATION*)notifBuffer;
-        if(pNotify->Action == FILE_ACTION_MODIFIED){
-         //  printf("Action: %ld, File: %ls\n", pNotify->Action, pNotify->FileName);
-            size_t combinedLength = strlen("./shaders/") + wcslen(pNotify->FileName) + 1; // +1 for null terminator
-            char dir[] = "./shaders/";
-            char* path = (char*)malloc(combinedLength);
-            strcpy(path, "./shaders/");
-            char* t[wcslen(pNotify->FileName) + 1];
-            wcstombs(t, pNotify->FileName, 128);
-            strcat(path,t);
-          //  printf("Prefixed File: %s\n", path);
-            for(int i = 0; i < NUM_SHADERS; i++){
-                if(strcmp(&path,shaders[i].fragment_source)){
-                    reload_shader(&shaders[i]); 
-                }
-            }
-            free(t);
-            free(path);
-            
-        }
-    }else {
-        printf("Error occurred: %ld\n", dwErrorCode);
-    }
-    CloseHandle(shader_handle);
-    CloseHandle(overlapped.hEvent);
-   
-    poll_shaders();
-}
-
-void poll_shaders(){
-    shader_handle = CreateFileA("./shaders/",(GENERIC_READ | GENERIC_WRITE),(FILE_SHARE_READ | FILE_SHARE_READ),NULL, ( OPEN_EXISTING) ,FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
-    if(shader_handle == INVALID_HANDLE_VALUE){
-        printf("Error: Unable to open directory.\n");
-        return;
-    }
-    overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    if (overlapped.hEvent == NULL) {
-        printf("Error creating event object.\n");
-        CloseHandle(shader_handle);
-        return;
-    }
-    bool c = ReadDirectoryChangesW(shader_handle,notifBuffer, sizeof(notifBuffer),FALSE,(FILE_NOTIFY_CHANGE_LAST_WRITE), NULL, &overlapped, &ShaderChangedCallback);
-    if(!c){
-        printf("Error initiating asynchronous directory monitor.\n");
-        CloseHandle(overlapped.hEvent);
-        CloseHandle(shader_handle);
-        
-    }
-}
-
-
-
-
-
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Setup function to initialize variables and game objects
@@ -211,7 +147,6 @@ int setup(void) {
     fprintf(stderr, "Error initializing SDL window");
     return false;
     }
-    pthread_t thread1;
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
@@ -226,20 +161,17 @@ int setup(void) {
     set_material_specular(&mat,(vec3){0.5f, 0.5f, 0.5f});
     set_material_shininess(&mat, 32.0f);
 
-   
     // int full_screen_width = displayMode.w;
     // int full_screen_height = displayMode.h;
     // window_width = full_screen_width;
     // window_height = full_screen_height;
 
-    obj_shaders[0] = "./shaders/obj_vertex.glsl";
-    obj_shaders[1] = "./shaders/obj_frag.glsl";
+    obj_shaders[0] =  "./shaders/obj_vertex.glsl";
+    obj_shaders[1] =  "./shaders/obj_frag.glsl";
     light_shaders[0] = "./shaders/light_vertex.glsl";
     light_shaders[1] = "./shaders/light_frag.glsl";
 
     stbi_set_flip_vertically_on_load(true);
-    
-    
     
     window = SDL_CreateWindow(
         "The window into Jamie's madness",
@@ -253,8 +185,6 @@ int setup(void) {
         fprintf(stderr, "Error creating SDL window");
         return false;
     }
-
- 
     renderer = SDL_CreateRenderer(window,-1, 0);
 
     if(!renderer){
@@ -273,14 +203,9 @@ int setup(void) {
     glewExperimental = GL_TRUE;
     
     glewInit();
-
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-
     init_camera(cameraPos,up);
-    
-    poll_shaders();
-    
+
     return true; 
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -288,22 +213,25 @@ int setup(void) {
 ///////////////////////////////////////////////////////////////////////////////
 int init_openGL(){
     printf("initialized shaders\n");
+    init_shader(&error_shader, "./shaders/ERROR_FRAG.glsl",   frag);
+    init_shader(&error_shader, "./shaders/ERROR_VERTEX.glsl", vert);
+    link_shader(&error_shader);
 
     if(!init_shader(&shaders[0], obj_shaders[0], vert)){
         printf("error intialising %s\n", obj_shaders[0]);
-        return false;
+        load_error_shader(&shaders[0],&error_shader);
     }
     if(!init_shader(&shaders[0], obj_shaders[1], frag)){
         printf("error intialising %s\n", obj_shaders[1]);
-        return false;
+        load_error_shader(&shaders[0],&error_shader);
     }
     if(!init_shader(&shaders[1], light_shaders[0], vert)){
         printf("error intialising %s\n", light_shaders[0]);
-        return false;
+        load_error_shader(&shaders[1],&error_shader);
     }
     if(!init_shader(&shaders[1], light_shaders[1], frag)){
         printf("error intialising %s\n", light_shaders[0]);
-        return false;
+        load_error_shader(&shaders[1],&error_shader);
     }
     if(!link_shader(&shaders[0])){
         printf("error linking obj shader \n");
@@ -342,23 +270,13 @@ int init_openGL(){
     glEnableVertexAttribArray(0);
     // texture coord attribute
 
-
     glEnable(GL_DEPTH_TEST); 
-    // poll_shaders();
     stbi_set_flip_vertically_on_load(true);
     
     tex  = init_texture("./textures/container.png");
     tex2 = init_texture("./textures/container2_specular.png");
 
     return true;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Poll shader directory for changes to shaders and reload if necessary
-///////////////////////////////////////////////////////////////////////////////
-void process_shader_changes(void){
-        
-
 }
 
 
@@ -413,7 +331,6 @@ void update(void) {
     delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
 
     time = (float)SDL_GetTicks()/1000;
-   
     glm_mat4_identity(model);
     spotLightCutOffInner = 12.5f;
     spotLightCutOffOuter = 17.5f;
@@ -432,7 +349,6 @@ void update(void) {
     lightPos[2][1] = 2.5 * sin(time);
     lightPos[2][2] = 2.5 * cos(time*2);
 
-   
     
     camera_look_at(&view);
     glm_perspective(p_angle,(float)(window_width/window_height),0.1f,100.0f,projection);
@@ -454,12 +370,9 @@ void render(void) {
     
     use_shader(shaders[0].shader_ID);
     vec3 light = {1.0f,1.0f,1.0f};
-    
 
     set_matrix(shaders[0].shader_ID,"view", view);
     set_matrix(shaders[0].shader_ID,"projection", projection);
-
-
 
     get_camera_position(&cameraPos);
     set_float(shaders[0].shader_ID,"time",time);
@@ -479,7 +392,6 @@ void render(void) {
     set_vec3(shaders[0].shader_ID, "light.direction", lightDir);
 
     //For point Lights
-    
     set_vec3(shaders[0].shader_ID, "pointLights[0].color", lightCol[0]);
     set_vec3(shaders[0].shader_ID, "pointLights[0].ambient", (vec3){0.2f, 0.82f, 0.2f});
     set_vec3(shaders[0].shader_ID, "pointLights[0].diffuse", (vec3){0.5f, 0.5f, 0.5f});
@@ -506,7 +418,6 @@ void render(void) {
     set_float(shaders[0].shader_ID, "pointLights[2].constant", 1.0f);
     set_float(shaders[0].shader_ID, "pointLights[2].linear", 0.9f);
     set_float(shaders[0].shader_ID, "pointLights[2].quadratic", 0.032f);
-    
 
     //For spot Light
     set_vec3(shaders[0].shader_ID, "sLight.ambient", (vec3){0.1f, 0.1f, 0.1f});
@@ -517,7 +428,7 @@ void render(void) {
     set_float(shaders[0].shader_ID, "sLight.quadratic", 0.032f);
     set_vec3(shaders[0].shader_ID, "sLight.position", spotLightPos);
     set_vec3(shaders[0].shader_ID, "sLight.direction", spotLightDir);
-    set_float(shaders[0].shader_ID, "sLight.cutOff", spotLightCutOffInner);
+    set_float(shaders[0].shader_ID, "sLight.cutOff",  spotLightCutOffInner);
     set_float(shaders[0].shader_ID, "sLight.outerCutOff", spotLightCutOffOuter);
 
     glBindVertexArray(cubeVAO); 
@@ -546,7 +457,6 @@ void render(void) {
     }
     
 
-
     SDL_GL_SwapWindow(window);
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -556,7 +466,6 @@ void free_resources(void) {
     glDeleteVertexArrays(1, &cubeVAO);
     glDeleteBuffers(1, &VBO);
     glDeleteProgram(shaderProgram);
-
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Main function
@@ -565,19 +474,68 @@ int main(int argc, char* args[]){
     setup();
     is_running = init_openGL();
     glViewport(0, 0, window_width, window_height);
+    poll_shaders();
     while (is_running) {
         WaitForSingleObjectEx(shader_handle,0,TRUE); // check to see if any shaders have been changed
         process_input();
         update();
-        
         render();
     }
-
     free_resources();
-
     return 0;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Poll shader directory for changes to shaders and reload if necessary
+///////////////////////////////////////////////////////////////////////////////
+void CALLBACK ShaderChangedCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped) {
+    if(dwErrorCode == ERROR_SUCCESS){
+        FILE_NOTIFY_INFORMATION* pNotify = (FILE_NOTIFY_INFORMATION*)notifBuffer;
+        if(pNotify->Action == FILE_ACTION_MODIFIED){
+            size_t combinedLength = strlen("./shaders/") + wcslen(pNotify->FileName) + 1; // +1 for null terminator
+            char* path = (char*)malloc(combinedLength);
+            strcpy(path, "./shaders/");
+            char *t = malloc((wcslen(pNotify->FileName) + 1) * sizeof(char));
+            wcstombs(t, pNotify->FileName, 128);
+            strcat(path,t);
+            for(int i = 0; i < NUM_SHADERS; i++){
+                if(strcmp(path,shaders[i].fragment_source)){
+                    if(!reload_shader(&shaders[i])){
+                        printf("Error updating shader, fallback to error shader\n");
+                        load_error_shader(&shaders[i],&error_shader);
+                    } 
+                }
+            }
+            free(t);
+            free(path);
+            
+        }
+    }else {
+        printf("Error occurred: %ld\n", dwErrorCode);
+    }
+    CloseHandle(shader_handle);
+    CloseHandle(overlapped.hEvent);
+    poll_shaders();
+}
 
-
-
+//TODO: ADD SUPPORT FOR MAC/Linux
+void poll_shaders(){
+    
+        shader_handle = CreateFileA("./shaders/",(GENERIC_READ | GENERIC_WRITE),(FILE_SHARE_READ | FILE_SHARE_READ),NULL, ( OPEN_EXISTING) ,FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
+        if(shader_handle == INVALID_HANDLE_VALUE){
+            printf("Error: Unable to open directory.\n");
+            return;
+        }
+        overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+        if (overlapped.hEvent == NULL) {
+            printf("Error creating event object.\n");
+            CloseHandle(shader_handle);
+            return;
+        }
+        bool c = ReadDirectoryChangesW(shader_handle, notifBuffer, sizeof(notifBuffer),FALSE,(FILE_NOTIFY_CHANGE_LAST_WRITE), NULL, &overlapped, &ShaderChangedCallback);
+        if(!c){
+            printf("Error initiating asynchronous directory monitor.\n");
+            CloseHandle(overlapped.hEvent);
+            CloseHandle(shader_handle);
+        }
+}
