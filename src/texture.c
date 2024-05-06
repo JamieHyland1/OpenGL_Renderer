@@ -29,7 +29,7 @@ texture_t init_texture(const char* filename){
     }else{
         printf("Failed to load texture :( %s\n" , filename);
     }
-
+    
     stbi_image_free(data);
     return texture;
 }

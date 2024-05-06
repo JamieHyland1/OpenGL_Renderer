@@ -97,7 +97,6 @@ void load_error_shader(shader_t* shader, shader_t* err){
      init_shader(err, "./shaders/ERROR_FRAG.glsl",   FRAGMENT);
     init_shader(err, "./shaders/ERROR_VERTEX.glsl", VERTEX);
     link_shader(err);
-    return true;
 }
 void use_shader(int id){
     glUseProgram(id);
@@ -134,6 +133,7 @@ GLchar* get_shader_source(char* filename){
         buffer = malloc(( size + 1 ) * sizeof(buffer));
         fread(buffer,size,1,fp);
         buffer[size] = '\0';
+        // printf("buffer: %s \n", buffer);
         return buffer;
     }
     printf("something went wrong\n");

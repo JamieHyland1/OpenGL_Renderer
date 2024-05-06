@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include "math.h"
 #include "shader.h"
+#include "array.h"
 #include "texture.h"
 #include "camera.h"
 #include "windows.h"
@@ -15,10 +16,9 @@
 #include "fileapi.h"
 #include "synchapi.h"
 #include "pthread.h"
-
+#include "mesh.h"
 #define FPS 144
 #define FRAME_TARGET_TIME  (1000 / FPS)
-#define SHADER_POLL_TIME  (2500/1000)
 #define NUM_SHADERS 2
 
 //TODO: clean up all these variables into a display file or some sort of file that handles the settings of the renderer
@@ -43,8 +43,9 @@ vec3 spotLightPos = {0.0f,0.0f,0.0f};
 vec3 spotLightDir = {0.0f,0.0f,0.0f};
 float spotLightCutOffInner = 12.0f;
 float spotLightCutOffOuter = 15.0f;
-
-
+mesh_t cubeMesh;
+texture_t cubeTexture;
+shader_t cubeShader;
 char* obj_shaders[2];
 char* light_shaders[2];
 unsigned int EBO;
@@ -161,6 +162,8 @@ int setup(void) {
     set_material_specular(&mat,(vec3){0.5f, 0.5f, 0.5f});
     set_material_shininess(&mat, 32.0f);
 
+    
+
     // int full_screen_width = displayMode.w;
     // int full_screen_height = displayMode.h;
     // window_width = full_screen_width;
@@ -172,7 +175,11 @@ int setup(void) {
     light_shaders[1] = "./shaders/light_frag.glsl";
 
     stbi_set_flip_vertically_on_load(true);
-    
+
+    load_mesh_obj_data(&cubeMesh,"./Res/Cube/Model/cube.obj");
+    cubeTexture = init_texture("./Res/Cube/Texture/texture_diffuse.png");
+    cubeTexture.type = "texture_diffuse";
+    array_push(cubeMesh.textures,cubeTexture);
     window = SDL_CreateWindow(
         "The window into Jamie's madness",
         SDL_WINDOWPOS_CENTERED,
@@ -217,58 +224,62 @@ int init_openGL(){
     init_shader(&error_shader, "./shaders/ERROR_VERTEX.glsl", vert);
     link_shader(&error_shader);
 
-    if(!init_shader(&shaders[0], obj_shaders[0], vert)){
-        printf("error intialising %s\n", obj_shaders[0]);
-        load_error_shader(&shaders[0],&error_shader);
+    if(!init_shader(&cubeShader, "./Res/Cube/Shader/vertex.glsl", vert)){
+        printf("error intialising %s\n", "./Res/Cube/Shader/vertex.glsl");
+        load_error_shader(&cubeShader,&error_shader);
     }
-    if(!init_shader(&shaders[0], obj_shaders[1], frag)){
+    if(!init_shader(&cubeShader, "./Res/Cube/Shader/frag.glsl", frag)){
         printf("error intialising %s\n", obj_shaders[1]);
-        load_error_shader(&shaders[0],&error_shader);
+        load_error_shader(&cubeShader,&error_shader);
     }
-    if(!init_shader(&shaders[1], light_shaders[0], vert)){
-        printf("error intialising %s\n", light_shaders[0]);
-        load_error_shader(&shaders[1],&error_shader);
-    }
-    if(!init_shader(&shaders[1], light_shaders[1], frag)){
-        printf("error intialising %s\n", light_shaders[0]);
-        load_error_shader(&shaders[1],&error_shader);
-    }
-    if(!link_shader(&shaders[0])){
-        printf("error linking obj shader \n");
-        return false;
-    }
-    if(!link_shader(&shaders[1])){
-        printf("error linking light shader \n");
-        return false;
-    }
+    // if(!init_shader(&shaders[1], light_shaders[0], vert)){
+    //     printf("error intialising %s\n", light_shaders[0]);
+    //     load_error_shader(&shaders[1],&error_shader);
+    // }
+    // if(!init_shader(&shaders[1], light_shaders[1], frag)){
+    //     printf("error intialising %s\n", light_shaders[0]);
+    //     load_error_shader(&shaders[1],&error_shader);
+    // }
+    // if(!link_shader(&shaders[0])){
+    //     printf("error linking obj shader \n");
+    //     return false;
+    // }
+    // if(!link_shader(&shaders[1])){
+    //     printf("error linking light shader \n");
+    //     return false;
+    // }
 
-    glGenVertexArrays(1, &cubeVAO);
-    glGenBuffers(1, &VBO);
+    // glGenVertexArrays(1, &cubeVAO);
+    // glGenBuffers(1, &VBO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glBindVertexArray(cubeVAO);
-    // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    // glBindVertexArray(cubeVAO);
+    // // position attribute
+    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    // glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    // glEnableVertexAttribArray(1);
 
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
+    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    // glEnableVertexAttribArray(2);
 
-    // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
-    glGenVertexArrays(1, &lightVAO);
-    glBindVertexArray(lightVAO);
+    // // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
+    // glGenVertexArrays(1, &lightVAO);
+    // glBindVertexArray(lightVAO);
 
-    // we only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need (it's already bound, but we do it again for educational purposes)
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    // // we only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need (it's already bound, but we do it again for educational purposes)
+    // glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    // glEnableVertexAttribArray(0);
     // texture coord attribute
+    setup_mesh(&cubeMesh);
+
+    printf("number of vertices: %d", array_length(cubeMesh.textures));
+    
 
     glEnable(GL_DEPTH_TEST); 
     stbi_set_flip_vertically_on_load(true);
@@ -359,103 +370,103 @@ void update(void) {
 // Render function to draw objects on the display
 ///////////////////////////////////////////////////////////////////////////////
 void render(void) {
-    glClearColor(0.0f,0.0f,0.0f, 1.0f);
+    glClearColor(0.8f,0.2f,0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, tex.id);
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, tex.id);
     
-    glActiveTexture(GL_TEXTURE1); 
-    glBindTexture(GL_TEXTURE_2D, tex2.id);
+    // glActiveTexture(GL_TEXTURE1); 
+    // glBindTexture(GL_TEXTURE_2D, tex2.id);
     
-    use_shader(shaders[0].shader_ID);
-    vec3 light = {1.0f,1.0f,1.0f};
+    // use_shader(shaders[0].shader_ID);
+    // vec3 light = {1.0f,1.0f,1.0f};
 
-    set_matrix(shaders[0].shader_ID,"view", view);
-    set_matrix(shaders[0].shader_ID,"projection", projection);
+    set_matrix(cubeShader.shader_ID,"view", view);
+    set_matrix(cubeShader.shader_ID,"projection", projection);
 
-    get_camera_position(&cameraPos);
-    set_float(shaders[0].shader_ID,"time",time);
+    // get_camera_position(&cameraPos);
+    // set_float(shaders[0].shader_ID,"time",time);
 
-    set_vec3(shaders[0].shader_ID, "lightColor", light);
-    set_vec3(shaders[0].shader_ID, "light.direction", (vec3){-0.2f, -1.0f, -0.3f});
-    set_vec3(shaders[0].shader_ID, "viewPos", cameraPos);
+    // set_vec3(shaders[0].shader_ID, "lightColor", light);
+    // set_vec3(shaders[0].shader_ID, "light.direction", (vec3){-0.2f, -1.0f, -0.3f});
+    // set_vec3(shaders[0].shader_ID, "viewPos", cameraPos);
 
-    set_float(shaders[0].shader_ID, "material.shininess", mat.shininess);
-    set_int(shaders[0].shader_ID,"material.diffuse", 0);
-    set_int(shaders[0].shader_ID,"material.specular", 1);
+    // set_float(shaders[0].shader_ID, "material.shininess", mat.shininess);
+    // set_int(shaders[0].shader_ID,"material.diffuse", 0);
+    // set_int(shaders[0].shader_ID,"material.specular", 1);
     
-    //For directional Lights
-    set_vec3(shaders[0].shader_ID, "light.ambient", (vec3){0.02f, 0.02f, 0.02f});
-    set_vec3(shaders[0].shader_ID, "light.diffuse", (vec3){0.5f, 0.5f, 0.5f});
-    set_vec3(shaders[0].shader_ID, "light.specular",(vec3){1.0f, 1.0f, 1.0f});
-    set_vec3(shaders[0].shader_ID, "light.direction", lightDir);
+    // //For directional Lights
+    // set_vec3(shaders[0].shader_ID, "light.ambient", (vec3){0.02f, 0.02f, 0.02f});
+    // set_vec3(shaders[0].shader_ID, "light.diffuse", (vec3){0.5f, 0.5f, 0.5f});
+    // set_vec3(shaders[0].shader_ID, "light.specular",(vec3){1.0f, 1.0f, 1.0f});
+    // set_vec3(shaders[0].shader_ID, "light.direction", lightDir);
 
-    //For point Lights
-    set_vec3(shaders[0].shader_ID, "pointLights[0].color", lightCol[0]);
-    set_vec3(shaders[0].shader_ID, "pointLights[0].ambient", (vec3){0.2f, 0.82f, 0.2f});
-    set_vec3(shaders[0].shader_ID, "pointLights[0].diffuse", (vec3){0.5f, 0.5f, 0.5f});
-    set_vec3(shaders[0].shader_ID, "pointLights[0].specular",(vec3){1.0f, 0.0f, 1.0f});
-    set_vec3(shaders[0].shader_ID, "pointLights[0].position", lightPos[0]);
-    set_float(shaders[0].shader_ID, "pointLights[0].constant", 1.0f);
-    set_float(shaders[0].shader_ID, "pointLights[0].linear", 0.09f);
-    set_float(shaders[0].shader_ID, "pointLights[0].quadratic", 0.032f);
+    // //For point Lights
+    // set_vec3(shaders[0].shader_ID, "pointLights[0].color", lightCol[0]);
+    // set_vec3(shaders[0].shader_ID, "pointLights[0].ambient", (vec3){0.2f, 0.82f, 0.2f});
+    // set_vec3(shaders[0].shader_ID, "pointLights[0].diffuse", (vec3){0.5f, 0.5f, 0.5f});
+    // set_vec3(shaders[0].shader_ID, "pointLights[0].specular",(vec3){1.0f, 0.0f, 1.0f});
+    // set_vec3(shaders[0].shader_ID, "pointLights[0].position", lightPos[0]);
+    // set_float(shaders[0].shader_ID, "pointLights[0].constant", 1.0f);
+    // set_float(shaders[0].shader_ID, "pointLights[0].linear", 0.09f);
+    // set_float(shaders[0].shader_ID, "pointLights[0].quadratic", 0.032f);
 
-    set_vec3(shaders[0].shader_ID, "pointLights[1].color", lightCol[1]);
-    set_vec3(shaders[0].shader_ID, "pointLights[1].ambient", (vec3){0.25f, 0.02f, 0.02f});
-    set_vec3(shaders[0].shader_ID, "pointLights[1].diffuse", (vec3){0.05f, 0.5f, 0.5f});
-    set_vec3(shaders[0].shader_ID, "pointLights[1].specular",(vec3){1.0f, 1.0f, 1.0f});
-    set_vec3(shaders[0].shader_ID, "pointLights[1].position", lightPos[1]);
-    set_float(shaders[0].shader_ID, "pointLights[1].constant", 1.0f);
-    set_float(shaders[0].shader_ID, "pointLights[1].linear", 0.09f);
-    set_float(shaders[0].shader_ID, "pointLights[1].quadratic", 0.032f);
+    // set_vec3(shaders[0].shader_ID, "pointLights[1].color", lightCol[1]);
+    // set_vec3(shaders[0].shader_ID, "pointLights[1].ambient", (vec3){0.25f, 0.02f, 0.02f});
+    // set_vec3(shaders[0].shader_ID, "pointLights[1].diffuse", (vec3){0.05f, 0.5f, 0.5f});
+    // set_vec3(shaders[0].shader_ID, "pointLights[1].specular",(vec3){1.0f, 1.0f, 1.0f});
+    // set_vec3(shaders[0].shader_ID, "pointLights[1].position", lightPos[1]);
+    // set_float(shaders[0].shader_ID, "pointLights[1].constant", 1.0f);
+    // set_float(shaders[0].shader_ID, "pointLights[1].linear", 0.09f);
+    // set_float(shaders[0].shader_ID, "pointLights[1].quadratic", 0.032f);
 
-    set_vec3(shaders[0].shader_ID, "pointLights[2].color", lightCol[2]);
-    set_vec3(shaders[0].shader_ID, "pointLights[2].ambient", (vec3){0.52f, 0.52f, 0.52f});
-    set_vec3(shaders[0].shader_ID, "pointLights[2].diffuse", (vec3){0.5f, 0.25f, 0.5f});
-    set_vec3(shaders[0].shader_ID, "pointLights[2].specular",(vec3){1.0f, 1.0f, 1.0f});
-    set_vec3(shaders[0].shader_ID, "pointLights[2].position", lightPos[2]);
-    set_float(shaders[0].shader_ID, "pointLights[2].constant", 1.0f);
-    set_float(shaders[0].shader_ID, "pointLights[2].linear", 0.9f);
-    set_float(shaders[0].shader_ID, "pointLights[2].quadratic", 0.032f);
+    // set_vec3(shaders[0].shader_ID, "pointLights[2].color", lightCol[2]);
+    // set_vec3(shaders[0].shader_ID, "pointLights[2].ambient", (vec3){0.52f, 0.52f, 0.52f});
+    // set_vec3(shaders[0].shader_ID, "pointLights[2].diffuse", (vec3){0.5f, 0.25f, 0.5f});
+    // set_vec3(shaders[0].shader_ID, "pointLights[2].specular",(vec3){1.0f, 1.0f, 1.0f});
+    // set_vec3(shaders[0].shader_ID, "pointLights[2].position", lightPos[2]);
+    // set_float(shaders[0].shader_ID, "pointLights[2].constant", 1.0f);
+    // set_float(shaders[0].shader_ID, "pointLights[2].linear", 0.9f);
+    // set_float(shaders[0].shader_ID, "pointLights[2].quadratic", 0.032f);
 
-    //For spot Light
-    set_vec3(shaders[0].shader_ID, "sLight.ambient", (vec3){0.1f, 0.1f, 0.1f});
-    set_vec3(shaders[0].shader_ID, "sLight.diffuse", (vec3){0.8f, 0.8f, 0.8f});
-    set_vec3(shaders[0].shader_ID, "sLight.specular",(vec3){1.0f, 1.0f, 1.0f});
-    set_float(shaders[0].shader_ID, "sLight.constant", 1.0f);
-    set_float(shaders[0].shader_ID, "sLight.linear", 0.09f);
-    set_float(shaders[0].shader_ID, "sLight.quadratic", 0.032f);
-    set_vec3(shaders[0].shader_ID, "sLight.position", spotLightPos);
-    set_vec3(shaders[0].shader_ID, "sLight.direction", spotLightDir);
-    set_float(shaders[0].shader_ID, "sLight.cutOff",  spotLightCutOffInner);
-    set_float(shaders[0].shader_ID, "sLight.outerCutOff", spotLightCutOffOuter);
+    // //For spot Light
+    // set_vec3(shaders[0].shader_ID, "sLight.ambient", (vec3){0.1f, 0.1f, 0.1f});
+    // set_vec3(shaders[0].shader_ID, "sLight.diffuse", (vec3){0.8f, 0.8f, 0.8f});
+    // set_vec3(shaders[0].shader_ID, "sLight.specular",(vec3){1.0f, 1.0f, 1.0f});
+    // set_float(shaders[0].shader_ID, "sLight.constant", 1.0f);
+    // set_float(shaders[0].shader_ID, "sLight.linear", 0.09f);
+    // set_float(shaders[0].shader_ID, "sLight.quadratic", 0.032f);
+    // set_vec3(shaders[0].shader_ID, "sLight.position", spotLightPos);
+    // set_vec3(shaders[0].shader_ID, "sLight.direction", spotLightDir);
+    // set_float(shaders[0].shader_ID, "sLight.cutOff",  spotLightCutOffInner);
+    // set_float(shaders[0].shader_ID, "sLight.outerCutOff", spotLightCutOffOuter);
 
-    glBindVertexArray(cubeVAO); 
+    // glBindVertexArray(cubeVAO); 
 
-    for(int i = 0; i < 10; i ++){
-        glm_mat4_identity(&model[0]);
-        glm_translate(&model[0], &cubePositions[i][0]);
-        float angle = i * 20.0f;
-        glm_rotate(&model[0], angle, &axis[0]);
-        set_matrix(shaders[0].shader_ID,"model", model);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
+    // for(int i = 0; i < 10; i ++){
+    //     glm_mat4_identity(&model[0]);
+    //     glm_translate(&model[0], &cubePositions[i][0]);
+    //     float angle = i * 20.0f;
+    //     glm_rotate(&model[0], angle, &axis[0]);
+    //     set_matrix(shaders[0].shader_ID,"model", model);
+    //     glDrawArrays(GL_TRIANGLES, 0, 36);
+    // }
     
-    use_shader(shaders[1].shader_ID);
-    set_matrix(shaders[1].shader_ID,"view", view);
-    set_matrix(shaders[1].shader_ID,"projection", projection);
-    for(int i = 0; i < 3; i ++){
-        glm_mat4_identity(model);
-        glm_translate(&model[0], &lightPos[i][0]);
-        glm_scale(&model[0], &lightScale[0]);
-        set_matrix(shaders[1].shader_ID,"model", model);
-        set_vec3(shaders[1].shader_ID, "lightColor", lightCol[i]);
+    // use_shader(shaders[1].shader_ID);
+    // set_matrix(shaders[1].shader_ID,"view", view);
+    // set_matrix(shaders[1].shader_ID,"projection", projection);
+    // for(int i = 0; i < 3; i ++){
+    //     glm_mat4_identity(model);
+    //     glm_translate(&model[0], &lightPos[i][0]);
+    //     glm_scale(&model[0], &lightScale[0]);
+    //     set_matrix(shaders[1].shader_ID,"model", model);
+    //     set_vec3(shaders[1].shader_ID, "lightColor", lightCol[i]);
         
-        glBindVertexArray(lightVAO); 
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-    
+    //     glBindVertexArray(lightVAO); 
+    //     glDrawArrays(GL_TRIANGLES, 0, 36);
+    // }
+    draw_mesh(&cubeMesh, &cubeShader);
 
     SDL_GL_SwapWindow(window);
 }

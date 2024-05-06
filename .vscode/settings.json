@@ -15,6 +15,13 @@
         "shader.h": "c",
         "cglm.h": "c",
         "camera.h": "c",
-        "material.h": "c"
+        "material.h": "c",
+        "math.h": "c",
+        "array.h": "c",
+        "mesh.h": "c",
+        "chrono": "c",
+        "xlocale": "c",
+        "regex": "c",
+        "sstream": "c"
     }
 }
