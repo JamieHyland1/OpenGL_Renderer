@@ -22,6 +22,20 @@
         "chrono": "c",
         "xlocale": "c",
         "regex": "c",
-        "sstream": "c"
+        "sstream": "c",
+        "windows.h": "c",
+        "importerdesc.h": "c",
+        "postprocess.h": "c",
+        "scene.h": "c",
+        "cimport.h": "c",
+        "vertex.h": "c",
+        "struct.h": "c",
+        "model.h": "c",
+        "format": "c",
+        "list": "c",
+        "vector": "c",
+        "functional": "cpp",
+        "stb_image.h": "c",
+        "cmath": "c"
     }
 }

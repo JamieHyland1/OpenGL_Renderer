@@ -52,9 +52,7 @@ void process_mouse_move(float xPos, float yPos,float delta_time){
         camera.pitch = 89.0f;
     if(camera.pitch < -89.0f)
         camera.pitch = -89.0f;
-
-
-
+        
     updateCameraVectors(delta_time);
 }
 void process_keyboard_movement(SDL_Event event, float delta_time){
@@ -82,7 +80,7 @@ void process_keyboard_movement(SDL_Event event, float delta_time){
         glm_vec3_add(&camera.position[0],&camera.cam_vel[0],&camera.position[0]);
         camera.position[1] = 1;
     }
-
+    printf("Camera position[%f,%f,%f]", camera.position[0],camera.position[1],camera.position[2]);
     updateCameraVectors(delta_time);
 
 }
@@ -117,11 +115,9 @@ void updateCameraVectors(float delta_time){
     
     
 }
-
-void get_camera_position( vec3* vec){
+void get_camera_position(vec3* vec){
     glm_vec3_copy(&camera.position[0],vec[0]);
 }
-
-void get_camera_direction( vec3* vec){
+void get_camera_direction(vec3* vec){
     glm_vec3_copy(&camera.direction[0],vec[0]);
 }

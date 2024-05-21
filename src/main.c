@@ -1,8 +1,13 @@
 #define GLEW_STATIC
+#define CGLM_STRUCT_API_NS
 #include "../include/GL/glew.h"
 #include <C:\SDL2\include\SDL.h>
 #include <C:\SDL2\include\SDL_opengl.h>
 #include "../include/cglm/cglm.h"
+#include "../include/cglm/struct.h"
+#include "../include/assimp/scene.h"
+#include "../include/assimp/cimport.h"
+#include "../include/assimp/postprocess.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -17,6 +22,7 @@
 #include "synchapi.h"
 #include "pthread.h"
 #include "mesh.h"
+#include "model.h"
 #define FPS 144
 #define FRAME_TARGET_TIME  (1000 / FPS)
 #define NUM_SHADERS 2
@@ -25,108 +31,22 @@
 static int window_width = 800;
 static int window_height = 600;
 bool mouse_button_down = false;
-unsigned int VBO;
-unsigned int cubeVAO, lightVAO;
+
 DWORD shaderStatus;
 Shader_Type frag = FRAGMENT;
 Shader_Type vert = VERTEX;
-vec3 lightPos[] = { {-0.2f, 2.0f, -2.0f},
-                    {-1.2f, 0.0f, -1.0f},
-                    {0.2f, -2.0f, 2.0f},};
-
-vec3 lightCol[] = { {1.0f, 0.0f, 0.0f},
-                    {0.0f, 1.0f, 0.0f},
-                    {0.0f, 0.0f, 1.0f}};
-vec3 lightDir = {-0.2f, 2.0f, -2.0f};
-vec3 lightScale = {0.42f,0.42f,0.42f};
-vec3 spotLightPos = {0.0f,0.0f,0.0f};
-vec3 spotLightDir = {0.0f,0.0f,0.0f};
-float spotLightCutOffInner = 12.0f;
-float spotLightCutOffOuter = 15.0f;
-mesh_t cubeMesh;
-texture_t cubeTexture;
+vec3 cameraPos = {0.0f, 0.0f, 5.0f};
+vec3 up = {0.0f,1.0f,0.0f};
 shader_t cubeShader;
-char* obj_shaders[2];
-char* light_shaders[2];
-unsigned int EBO;
-unsigned int vertexShader;
-unsigned int fragmentShader;
-unsigned int shaderProgram;
 float time = 0;
 float fov = 45.0f;
 mat4 model,view,projection;
 shader_t error_shader;
 shader_t shaders[NUM_SHADERS];
-texture_t tex;
-texture_t tex2;
-vec3 axis = {1.0f, 0.3f, 0.5f};
 HANDLE dwChangeHandles, files; 
-vec3 cameraPos = {0.0f, 0.0f, 5.0f};
-vec3 up = {0.0f,1.0f,0.0f};
-
-float vertices[] = {
-     // positions          // normals           // texture coords
-    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
-
-    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
-
-    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-
-     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-
-    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
-
-    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
-};
-unsigned int indices[] = {
-   -0.5f, -0.5f, -0.5f,  1.0f, 0.0f,0.0f,
-    0.5f, -0.5f, 0.0f,  0.0f, 1.0f,0.0f,
-     0.0f,  0.5f, 0.5f,  0.0f, 0.0f,1.0f
-    };
-vec3 cubePositions[] = {
-    { 0.0f,  0.0f,  -3.5f},
-    { 2.0f,  5.0f, -15.0f},
-    {-1.5f, -2.2f, -2.5f},
-    {-3.8f, -2.0f, -12.3f},
-    { 2.4f, -0.4f, -3.5f},
-    {-1.7f,  3.0f, -7.5f},
-    { 1.3f, -2.0f, -2.5f},
-    { 1.5f,  2.0f, -2.5f},
-    { 1.5f,  0.2f, -1.5f},
-    {-1.3f,  1.0f, -1.5f}
-};
-material_t mat;
+model_t cubeModel;
 OVERLAPPED  overlapped = {0};
+float p_angle = 45.0f;
 BYTE notifBuffer[4096];
 ///////////////////////////////////////////////////////////////////////////////
 // Global variables for execution status and renderer loop
@@ -157,29 +77,22 @@ int setup(void) {
 
     SDL_GetCurrentDisplayMode(0, &displayMode);
     
-    set_material_ambient(&mat, (vec3){1.0f, 0.5f, 0.31f});
-    set_material_diffuse(&mat, (vec3){1.0f, 0.5f, 0.31f});
-    set_material_specular(&mat,(vec3){0.5f, 0.5f, 0.5f});
-    set_material_shininess(&mat, 32.0f);
+    // set_material_ambient(&mat, (vec3){1.0f, 0.5f, 0.31f});
+    // set_material_diffuse(&mat, (vec3){1.0f, 0.5f, 0.31f});
+    // set_material_specular(&mat,(vec3){0.5f, 0.5f, 0.5f});
+    // set_material_shininess(&mat, 32.0f);
 
-    
+    load_model(&cubeModel,"./Res/Skull/Model/skull.obj");
+    printf("number of cube meshes: %d\n", array_length(cubeModel.meshes));
 
     // int full_screen_width = displayMode.w;
     // int full_screen_height = displayMode.h;
     // window_width = full_screen_width;
     // window_height = full_screen_height;
 
-    obj_shaders[0] =  "./shaders/obj_vertex.glsl";
-    obj_shaders[1] =  "./shaders/obj_frag.glsl";
-    light_shaders[0] = "./shaders/light_vertex.glsl";
-    light_shaders[1] = "./shaders/light_frag.glsl";
 
     stbi_set_flip_vertically_on_load(true);
 
-    load_mesh_obj_data(&cubeMesh,"./Res/Cube/Model/cube.obj");
-    cubeTexture = init_texture("./Res/Cube/Texture/texture_diffuse.png");
-    cubeTexture.type = "texture_diffuse";
-    array_push(cubeMesh.textures,cubeTexture);
     window = SDL_CreateWindow(
         "The window into Jamie's madness",
         SDL_WINDOWPOS_CENTERED,
@@ -229,64 +142,18 @@ int init_openGL(){
         load_error_shader(&cubeShader,&error_shader);
     }
     if(!init_shader(&cubeShader, "./Res/Cube/Shader/frag.glsl", frag)){
-        printf("error intialising %s\n", obj_shaders[1]);
+        //printf("error intialising %s\n", obj_shaders[1]);
         load_error_shader(&cubeShader,&error_shader);
     }
-    // if(!init_shader(&shaders[1], light_shaders[0], vert)){
-    //     printf("error intialising %s\n", light_shaders[0]);
-    //     load_error_shader(&shaders[1],&error_shader);
-    // }
-    // if(!init_shader(&shaders[1], light_shaders[1], frag)){
-    //     printf("error intialising %s\n", light_shaders[0]);
-    //     load_error_shader(&shaders[1],&error_shader);
-    // }
-    // if(!link_shader(&shaders[0])){
-    //     printf("error linking obj shader \n");
-    //     return false;
-    // }
-    // if(!link_shader(&shaders[1])){
-    //     printf("error linking light shader \n");
-    //     return false;
-    // }
 
-    // glGenVertexArrays(1, &cubeVAO);
-    // glGenBuffers(1, &VBO);
-
-    // glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // glBindVertexArray(cubeVAO);
-    // // position attribute
-    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    // glEnableVertexAttribArray(0);
-
-    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    // glEnableVertexAttribArray(1);
-
-    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    // glEnableVertexAttribArray(2);
-
-    // // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
-    // glGenVertexArrays(1, &lightVAO);
-    // glBindVertexArray(lightVAO);
-
-    // // we only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need (it's already bound, but we do it again for educational purposes)
-    // glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    // glEnableVertexAttribArray(0);
-    // texture coord attribute
-    setup_mesh(&cubeMesh);
-
-    printf("number of vertices: %d", array_length(cubeMesh.textures));
-    
+    int numMeshes = array_length(cubeModel.meshes);
+    for(int i = 0; i < numMeshes; i++){
+        setup_mesh(&cubeModel.meshes[i]);
+    }
 
     glEnable(GL_DEPTH_TEST); 
     stbi_set_flip_vertically_on_load(true);
     
-    tex  = init_texture("./textures/container.png");
-    tex2 = init_texture("./textures/container2_specular.png");
-
     return true;
 }
 
@@ -342,131 +209,29 @@ void update(void) {
     delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
 
     time = (float)SDL_GetTicks()/1000;
+
     glm_mat4_identity(model);
-    spotLightCutOffInner = 12.5f;
-    spotLightCutOffOuter = 17.5f;
-    float p_angle = fov;
-    glm_make_rad(&p_angle);
-
-    glm_make_rad(&spotLightCutOffInner);
-    spotLightCutOffInner = cosf(spotLightCutOffInner);
-
-    glm_make_rad(&spotLightCutOffOuter);
-    spotLightCutOffOuter = cosf(spotLightCutOffOuter);
-    get_camera_position(&spotLightPos);
-    get_camera_direction(&spotLightDir);
-
-    
-    lightPos[2][1] = 2.5 * sin(time);
-    lightPos[2][2] = 2.5 * cos(time*2);
-
-    
+    glm_rotate_y(&model[0],sin(time) * 5, &model[0]);
     camera_look_at(&view);
     glm_perspective(p_angle,(float)(window_width/window_height),0.1f,100.0f,projection);
-    
     previous_frame_time = SDL_GetTicks();
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Render function to draw objects on the display
 ///////////////////////////////////////////////////////////////////////////////
 void render(void) {
-    glClearColor(0.8f,0.2f,0.2f, 1.0f);
+    glClearColor(0.0f,0.2f,0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    // glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_2D, tex.id);
-    
-    // glActiveTexture(GL_TEXTURE1); 
-    // glBindTexture(GL_TEXTURE_2D, tex2.id);
-    
-    // use_shader(shaders[0].shader_ID);
-    // vec3 light = {1.0f,1.0f,1.0f};
-
+    vec3 t = {0.0f,0.0f,-10.0f * sinf(time)};
+    vec3 s = {0.20f,0.20f,0.20f};
+    glm_translate(&model[0],&t[0]);
+    glm_scale(&model[0],&s[0]);
+    use_shader(cubeShader.shader_ID);
+    set_float(cubeShader.shader_ID,"time", time);
+    set_matrix(cubeShader.shader_ID,"model", model);
     set_matrix(cubeShader.shader_ID,"view", view);
     set_matrix(cubeShader.shader_ID,"projection", projection);
-
-    // get_camera_position(&cameraPos);
-    // set_float(shaders[0].shader_ID,"time",time);
-
-    // set_vec3(shaders[0].shader_ID, "lightColor", light);
-    // set_vec3(shaders[0].shader_ID, "light.direction", (vec3){-0.2f, -1.0f, -0.3f});
-    // set_vec3(shaders[0].shader_ID, "viewPos", cameraPos);
-
-    // set_float(shaders[0].shader_ID, "material.shininess", mat.shininess);
-    // set_int(shaders[0].shader_ID,"material.diffuse", 0);
-    // set_int(shaders[0].shader_ID,"material.specular", 1);
-    
-    // //For directional Lights
-    // set_vec3(shaders[0].shader_ID, "light.ambient", (vec3){0.02f, 0.02f, 0.02f});
-    // set_vec3(shaders[0].shader_ID, "light.diffuse", (vec3){0.5f, 0.5f, 0.5f});
-    // set_vec3(shaders[0].shader_ID, "light.specular",(vec3){1.0f, 1.0f, 1.0f});
-    // set_vec3(shaders[0].shader_ID, "light.direction", lightDir);
-
-    // //For point Lights
-    // set_vec3(shaders[0].shader_ID, "pointLights[0].color", lightCol[0]);
-    // set_vec3(shaders[0].shader_ID, "pointLights[0].ambient", (vec3){0.2f, 0.82f, 0.2f});
-    // set_vec3(shaders[0].shader_ID, "pointLights[0].diffuse", (vec3){0.5f, 0.5f, 0.5f});
-    // set_vec3(shaders[0].shader_ID, "pointLights[0].specular",(vec3){1.0f, 0.0f, 1.0f});
-    // set_vec3(shaders[0].shader_ID, "pointLights[0].position", lightPos[0]);
-    // set_float(shaders[0].shader_ID, "pointLights[0].constant", 1.0f);
-    // set_float(shaders[0].shader_ID, "pointLights[0].linear", 0.09f);
-    // set_float(shaders[0].shader_ID, "pointLights[0].quadratic", 0.032f);
-
-    // set_vec3(shaders[0].shader_ID, "pointLights[1].color", lightCol[1]);
-    // set_vec3(shaders[0].shader_ID, "pointLights[1].ambient", (vec3){0.25f, 0.02f, 0.02f});
-    // set_vec3(shaders[0].shader_ID, "pointLights[1].diffuse", (vec3){0.05f, 0.5f, 0.5f});
-    // set_vec3(shaders[0].shader_ID, "pointLights[1].specular",(vec3){1.0f, 1.0f, 1.0f});
-    // set_vec3(shaders[0].shader_ID, "pointLights[1].position", lightPos[1]);
-    // set_float(shaders[0].shader_ID, "pointLights[1].constant", 1.0f);
-    // set_float(shaders[0].shader_ID, "pointLights[1].linear", 0.09f);
-    // set_float(shaders[0].shader_ID, "pointLights[1].quadratic", 0.032f);
-
-    // set_vec3(shaders[0].shader_ID, "pointLights[2].color", lightCol[2]);
-    // set_vec3(shaders[0].shader_ID, "pointLights[2].ambient", (vec3){0.52f, 0.52f, 0.52f});
-    // set_vec3(shaders[0].shader_ID, "pointLights[2].diffuse", (vec3){0.5f, 0.25f, 0.5f});
-    // set_vec3(shaders[0].shader_ID, "pointLights[2].specular",(vec3){1.0f, 1.0f, 1.0f});
-    // set_vec3(shaders[0].shader_ID, "pointLights[2].position", lightPos[2]);
-    // set_float(shaders[0].shader_ID, "pointLights[2].constant", 1.0f);
-    // set_float(shaders[0].shader_ID, "pointLights[2].linear", 0.9f);
-    // set_float(shaders[0].shader_ID, "pointLights[2].quadratic", 0.032f);
-
-    // //For spot Light
-    // set_vec3(shaders[0].shader_ID, "sLight.ambient", (vec3){0.1f, 0.1f, 0.1f});
-    // set_vec3(shaders[0].shader_ID, "sLight.diffuse", (vec3){0.8f, 0.8f, 0.8f});
-    // set_vec3(shaders[0].shader_ID, "sLight.specular",(vec3){1.0f, 1.0f, 1.0f});
-    // set_float(shaders[0].shader_ID, "sLight.constant", 1.0f);
-    // set_float(shaders[0].shader_ID, "sLight.linear", 0.09f);
-    // set_float(shaders[0].shader_ID, "sLight.quadratic", 0.032f);
-    // set_vec3(shaders[0].shader_ID, "sLight.position", spotLightPos);
-    // set_vec3(shaders[0].shader_ID, "sLight.direction", spotLightDir);
-    // set_float(shaders[0].shader_ID, "sLight.cutOff",  spotLightCutOffInner);
-    // set_float(shaders[0].shader_ID, "sLight.outerCutOff", spotLightCutOffOuter);
-
-    // glBindVertexArray(cubeVAO); 
-
-    // for(int i = 0; i < 10; i ++){
-    //     glm_mat4_identity(&model[0]);
-    //     glm_translate(&model[0], &cubePositions[i][0]);
-    //     float angle = i * 20.0f;
-    //     glm_rotate(&model[0], angle, &axis[0]);
-    //     set_matrix(shaders[0].shader_ID,"model", model);
-    //     glDrawArrays(GL_TRIANGLES, 0, 36);
-    // }
-    
-    // use_shader(shaders[1].shader_ID);
-    // set_matrix(shaders[1].shader_ID,"view", view);
-    // set_matrix(shaders[1].shader_ID,"projection", projection);
-    // for(int i = 0; i < 3; i ++){
-    //     glm_mat4_identity(model);
-    //     glm_translate(&model[0], &lightPos[i][0]);
-    //     glm_scale(&model[0], &lightScale[0]);
-    //     set_matrix(shaders[1].shader_ID,"model", model);
-    //     set_vec3(shaders[1].shader_ID, "lightColor", lightCol[i]);
-        
-    //     glBindVertexArray(lightVAO); 
-    //     glDrawArrays(GL_TRIANGLES, 0, 36);
-    // }
-    draw_mesh(&cubeMesh, &cubeShader);
+    draw_model(&cubeModel,&cubeShader);
 
     SDL_GL_SwapWindow(window);
 }
@@ -474,9 +239,7 @@ void render(void) {
 // Free the memory that was dynamically allocated by the program
 ///////////////////////////////////////////////////////////////////////////////
 void free_resources(void) {
-    glDeleteVertexArrays(1, &cubeVAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
+
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Main function

@@ -6,8 +6,8 @@
 #include "../include/cglm/cglm.h"
 
 typedef struct{
-    vec3 position;
-    vec3 Normal;
-    vec2 TexCoords;
+    vec3s Position;
+    vec3s Normal;
+    vec2s TexCoords;
 }vertex_t;
 #endif
