@@ -56,7 +56,7 @@ bool init_shader(shader_t* shader,  GLchar* filename, Shader_Type type){
 
     glAttachShader(shader->shader_ID,shader->vertex_shader_ID);
     glAttachShader(shader->shader_ID,shader->fragment_shader_ID);
-
+    
     return true;
 }
 bool link_shader(shader_t* shader){

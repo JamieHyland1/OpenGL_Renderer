@@ -26,6 +26,7 @@ texture_t init_texture(const char* filename){
     
     if(data){
         glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA, texture.width,texture.height,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
+        printf("successfully initialized texture! :) \n");
     }else{
         printf("Failed to load texture :( %s\n" , filename);
     }

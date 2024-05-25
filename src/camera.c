@@ -80,7 +80,6 @@ void process_keyboard_movement(SDL_Event event, float delta_time){
         glm_vec3_add(&camera.position[0],&camera.cam_vel[0],&camera.position[0]);
         camera.position[1] = 1;
     }
-    printf("Camera position[%f,%f,%f]", camera.position[0],camera.position[1],camera.position[2]);
     updateCameraVectors(delta_time);
 
 }

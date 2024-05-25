@@ -10,4 +10,4 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd C:\Users\Jamie\Documents\OpenGL Renderer\OpenGL_Renderer\Res\Skull\Model\texture_diffuse.png
+map_Kd texture_diffuse.png

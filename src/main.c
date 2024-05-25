@@ -37,7 +37,7 @@ Shader_Type frag = FRAGMENT;
 Shader_Type vert = VERTEX;
 vec3 cameraPos = {0.0f, 0.0f, 5.0f};
 vec3 up = {0.0f,1.0f,0.0f};
-shader_t cubeShader;
+shader_t shader;
 float time = 0;
 float fov = 45.0f;
 mat4 model,view,projection;
@@ -81,15 +81,15 @@ int setup(void) {
     // set_material_diffuse(&mat, (vec3){1.0f, 0.5f, 0.31f});
     // set_material_specular(&mat,(vec3){0.5f, 0.5f, 0.5f});
     // set_material_shininess(&mat, 32.0f);
-
+    
     load_model(&cubeModel,"./Res/Skull/Model/skull.obj");
-    printf("number of cube meshes: %d\n", array_length(cubeModel.meshes));
+    // printf("number of cube meshes: %d\n", array_length(cubeModel.meshes));
 
     // int full_screen_width = displayMode.w;
     // int full_screen_height = displayMode.h;
     // window_width = full_screen_width;
     // window_height = full_screen_height;
-
+   
 
     stbi_set_flip_vertically_on_load(true);
 
@@ -137,13 +137,13 @@ int init_openGL(){
     init_shader(&error_shader, "./shaders/ERROR_VERTEX.glsl", vert);
     link_shader(&error_shader);
 
-    if(!init_shader(&cubeShader, "./Res/Cube/Shader/vertex.glsl", vert)){
-        printf("error intialising %s\n", "./Res/Cube/Shader/vertex.glsl");
-        load_error_shader(&cubeShader,&error_shader);
+    if(!init_shader(&shader, "./Res/Skull/Shader/obj_vert.glsl", vert)){
+        printf("error intialising %s\n", "vertex shader");
+        load_error_shader(&shader,&error_shader);
     }
-    if(!init_shader(&cubeShader, "./Res/Cube/Shader/frag.glsl", frag)){
-        //printf("error intialising %s\n", obj_shaders[1]);
-        load_error_shader(&cubeShader,&error_shader);
+    if(!init_shader(&shader, "./Res/Skull/Shader/obj_frag.glsl", frag)){
+        printf("error intialising %s\n", "frag shader");
+        load_error_shader(&shader,&error_shader);
     }
 
     int numMeshes = array_length(cubeModel.meshes);
@@ -222,16 +222,12 @@ void update(void) {
 void render(void) {
     glClearColor(0.0f,0.2f,0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    vec3 t = {0.0f,0.0f,-10.0f * sinf(time)};
-    vec3 s = {0.20f,0.20f,0.20f};
-    glm_translate(&model[0],&t[0]);
-    glm_scale(&model[0],&s[0]);
-    use_shader(cubeShader.shader_ID);
-    set_float(cubeShader.shader_ID,"time", time);
-    set_matrix(cubeShader.shader_ID,"model", model);
-    set_matrix(cubeShader.shader_ID,"view", view);
-    set_matrix(cubeShader.shader_ID,"projection", projection);
-    draw_model(&cubeModel,&cubeShader);
+    use_shader(shader.shader_ID);
+    set_float(shader.shader_ID,"time", time);
+    set_matrix(shader.shader_ID,"model", model);
+    set_matrix(shader.shader_ID,"view", view);
+    set_matrix(shader.shader_ID,"projection", projection);
+    draw_model(&cubeModel,&shader);
 
     SDL_GL_SwapWindow(window);
 }

@@ -22,9 +22,9 @@ void load_model(model_t* model, char* path){
     char* directory = strdup(path);
     char* last_slash = strrchr(directory, '/');
     if (last_slash != NULL) {
-        *last_slash = '\0';
+        last_slash[1] = '\0';
     }
-    model->directory = strdup(path);
+    model->directory = strdup(directory);
     process_node(model, scene->mRootNode, scene);
 }
 
@@ -33,15 +33,16 @@ void process_node(model_t* model, struct aiNode* node, const struct aiScene* sce
     for(unsigned int i = 0; i < node->mNumMeshes; i++){
         struct aiMesh* aimesh = scene->mMeshes[node->mMeshes[i]]; 
         mesh_t mesh;
-        mesh = process_mesh(aimesh, scene);
+        mesh = process_mesh(aimesh, scene, model->directory);
         array_push(model->meshes,mesh);
+        printf("model directory: %s\n", model->directory );
     }
     
     for(unsigned int i = 0; i < node->mNumChildren; i ++){
         process_node(model,node->mChildren[i],scene);
     }
 }
-mesh_t process_mesh(struct aiMesh* aimesh, const struct aiScene* scene){
+mesh_t process_mesh(struct aiMesh* aimesh, const struct aiScene* scene, char* directory){
     mesh_t msh = {0};
     int N_VERTS = aimesh->mNumVertices;
     //printf("Number of numVertices: [%d]\n",N_VERTS);
@@ -89,24 +90,29 @@ mesh_t process_mesh(struct aiMesh* aimesh, const struct aiScene* scene){
             array_push(msh.indices, face.mIndices[j]);
         }
     }
-
+  
     // process material
     if(aimesh->mMaterialIndex >= 0){
         struct aiMaterial *material = scene->mMaterials[aimesh->mMaterialIndex];
-        load_material_textures(msh.textures, material, aiTextureType_DIFFUSE, "texture_diffuse");
-        load_material_textures(msh.textures, material, aiTextureType_SPECULAR,"texture_specular");
+        load_material_textures(&msh, material, aiTextureType_DIFFUSE, "texture_diffuse",directory);
+        load_material_textures(&msh, material, aiTextureType_SPECULAR,"texture_specular",directory);
     }
 
     return msh;
 }
-void load_material_textures(texture_t* tex_arr, struct aiMaterial* mat, enum aiTextureType type, char* typeName){
-    for(unsigned int i = 0; i < aiGetMaterialTextureCount(mat,type); i++){
+void load_material_textures(mesh_t* mesh, struct aiMaterial* mat, enum aiTextureType type, char* typeName, char* directory){
+    int tex_count = aiGetMaterialTextureCount(mat,type);
+    for(unsigned int i = 0; i < tex_count; i++){
         struct aiString str;
         enum aiReturn rtrn = aiGetMaterialTexture(mat,type,i,&str,NULL,NULL,NULL,NULL,NULL,NULL);
         if(rtrn == aiReturn_SUCCESS){
-            printf("success loading texture\n");
-            texture_t texture = init_texture(str.data);
-            array_push(tex_arr,texture);
+            char* path_to_tex = malloc(sizeof(char) * (strlen(directory) + strlen(str.data) + 1) );
+            strcpy(path_to_tex,directory);
+            strcat(path_to_tex,str.data);
+            texture_t texture = init_texture(path_to_tex);
+            texture.type = typeName;
+            array_push(mesh->textures,texture);
+            free(path_to_tex);
         }
         else if(rtrn == aiReturn_FAILURE){
             printf("error loading texture data\n");
