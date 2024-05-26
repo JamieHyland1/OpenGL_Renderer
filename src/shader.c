@@ -107,7 +107,9 @@ void set_bool  (int id, char* name, bool value){
 }
 
 void set_int   (int id, char* name, int value){
-    glUniform1i(glGetUniformLocation(id,name),value);
+    GLint result = glGetUniformLocation(id,name);
+    glUniform1i(result,value);
+    printf("name: %s result: %d \n", name, result);
 }
 
 void set_float (int id, char* name, float value){

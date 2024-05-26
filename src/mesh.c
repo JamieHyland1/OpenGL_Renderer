@@ -15,7 +15,7 @@ void setup_mesh(mesh_t* mesh){
     glGenVertexArrays(1, &mesh->VAO);
     glGenBuffers(1, &mesh->VBO);
     glGenBuffers(1, &mesh->EBO);
-  
+
     glBindVertexArray(mesh->VAO);
     glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
 
@@ -51,10 +51,9 @@ void draw_mesh(mesh_t* mesh, shader_t* shader){
             char num[length];
             snprintf(num, length + 1, "%d", diffuseNr);
             name = malloc(strlen(str_type) + length + 1);
-            final_name = malloc(strlen(name) + strlen("material.") + 1);
+            final_name = malloc(sizeof(char) * (strlen("material.") + strlen(str_type) + length + 1) );
             strcpy(name,str_type);
             strcat(name,num);
-            
             strcpy(final_name,"material.");
             strcat(final_name,name);
             diffuseNr++;
@@ -65,16 +64,15 @@ void draw_mesh(mesh_t* mesh, shader_t* shader){
             char num[length];
             snprintf(num, length + 1, "%d", diffuseNr);
             name = malloc(strlen(str_type) + length  + 1);
-            final_name = malloc(strlen(name) + strlen("material.") + 1);
+            final_name = malloc(sizeof(char) * (strlen("material.") + strlen(str_type) + length + 1) );
             strcpy(name,str_type);
             strcat(name,num);
-            
             strcpy(final_name,"material.");
             strcat(final_name,name);
             specularNr++;
         }
         
-        set_int(shader->shader_ID,final_name,i);
+        set_int(shader->shader_ID,final_name,mesh->textures[i].id);
         glBindTexture(GL_TEXTURE_2D, mesh->textures[i].id);
     }
     glActiveTexture(GL_TEXTURE0);

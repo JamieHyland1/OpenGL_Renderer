@@ -45,43 +45,30 @@ void process_node(model_t* model, struct aiNode* node, const struct aiScene* sce
 mesh_t process_mesh(struct aiMesh* aimesh, const struct aiScene* scene, char* directory){
     mesh_t msh = {0};
     int N_VERTS = aimesh->mNumVertices;
-    //printf("Number of numVertices: [%d]\n",N_VERTS);
-    //printf("mesh vertices array length: [%d]\n", array_length(mesh->vertices));
+    
     for(unsigned int i = 0; i < N_VERTS; i++){
         vertex_t vertex;
         vertex.Position.x = aimesh->mVertices[i].x;
         vertex.Position.y = aimesh->mVertices[i].y;
         vertex.Position.z = aimesh->mVertices[i].z;
-
-        // printf("vertex[%d].Position.x: [%f]\n",i, vertex.Position.x);
-        // printf("vertex[%d].Position.y: [%f]\n",i, vertex.Position.y);
-        // printf("vertex[%d].Position.z: [%f]\n",i, vertex.Position.z);
         // process vertex positions, normals and texture coordinates
 
         vertex.Normal.x = aimesh->mNormals[i].x;
         vertex.Normal.y = aimesh->mNormals[i].y;
         vertex.Normal.z = aimesh->mNormals[i].z;
 
-        // printf("vertex[%d].Normal.x: [%f]\n",i, vertex.Normal.x);
-        // printf("vertex[%d].Normal.y: [%f]\n",i, vertex.Normal.y);
-        // printf("vertex[%d].Normal.z: [%f]\n",i, vertex.Normal.z);
-
         if(aimesh->mTextureCoords[0]){
     
             vertex.TexCoords.x = aimesh->mTextureCoords[0]->x;
             vertex.TexCoords.y = aimesh->mTextureCoords[0]->y;
-    
         }
         else{
             vertex.TexCoords.x = 0.0f;
             vertex.TexCoords.y = 0.0f; 
         }
-        // printf("vertex[%d].TexCoords.x: [%f]\n",i, vertex.TexCoords.x);
-        // printf("vertex[%d].TexCoords.y: [%f]\n",i, vertex.TexCoords.y);
+        printf("vertex[%d].TexCoords: [%f, %f]\n",i, vertex.TexCoords.x, vertex.TexCoords.y);
         
         array_push(msh.vertices,vertex);
-       // printf("mesh vertices array length: [%d]\n", array_length(msh.vertices));
-        
     }
     // process indices
     for(unsigned int i = 0; i < aimesh->mNumFaces; i ++){
@@ -90,7 +77,6 @@ mesh_t process_mesh(struct aiMesh* aimesh, const struct aiScene* scene, char* di
             array_push(msh.indices, face.mIndices[j]);
         }
     }
-  
     // process material
     if(aimesh->mMaterialIndex >= 0){
         struct aiMaterial *material = scene->mMaterials[aimesh->mMaterialIndex];
@@ -111,6 +97,7 @@ void load_material_textures(mesh_t* mesh, struct aiMaterial* mat, enum aiTexture
             strcat(path_to_tex,str.data);
             texture_t texture = init_texture(path_to_tex);
             texture.type = typeName;
+            printf("texture id: %d\n", texture.id);
             array_push(mesh->textures,texture);
             free(path_to_tex);
         }

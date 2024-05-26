@@ -48,6 +48,7 @@ model_t cubeModel;
 OVERLAPPED  overlapped = {0};
 float p_angle = 45.0f;
 BYTE notifBuffer[4096];
+texture_t test;
 ///////////////////////////////////////////////////////////////////////////////
 // Global variables for execution status and renderer loop
 ///////////////////////////////////////////////////////////////////////////////
@@ -90,7 +91,7 @@ int setup(void) {
     // window_width = full_screen_width;
     // window_height = full_screen_height;
    
-
+    //test = init_texture("./Res/Skull/Model/texture_diffuse.png");
     stbi_set_flip_vertically_on_load(true);
 
     window = SDL_CreateWindow(
@@ -145,7 +146,7 @@ int init_openGL(){
         printf("error intialising %s\n", "frag shader");
         load_error_shader(&shader,&error_shader);
     }
-
+    link_shader(&shader);
     int numMeshes = array_length(cubeModel.meshes);
     for(int i = 0; i < numMeshes; i++){
         setup_mesh(&cubeModel.meshes[i]);
@@ -222,7 +223,9 @@ void update(void) {
 void render(void) {
     glClearColor(0.0f,0.2f,0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     use_shader(shader.shader_ID);
+    //set_int(shader.shader_ID,"test",test.id);
     set_float(shader.shader_ID,"time", time);
     set_matrix(shader.shader_ID,"model", model);
     set_matrix(shader.shader_ID,"view", view);
