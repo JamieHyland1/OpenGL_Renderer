@@ -94,7 +94,7 @@ bool reload_shader(shader_t* shader){
 void load_error_shader(shader_t* shader, shader_t* err){
     glDeleteProgram((GLuint)shader->shader_ID);
     shader->shader_ID = err->shader_ID;
-     init_shader(err, "./shaders/ERROR_FRAG.glsl",   FRAGMENT);
+    init_shader(err, "./shaders/ERROR_FRAG.glsl",   FRAGMENT);
     init_shader(err, "./shaders/ERROR_VERTEX.glsl", VERTEX);
     link_shader(err);
 }
@@ -108,7 +108,7 @@ void set_bool  (int id, char* name, bool value){
 
 void set_int   (int id, char* name, int value){
     GLint result = glGetUniformLocation(id,name);
-    glUniform1i(result,value);
+    glUniform1i( glGetUniformLocation(id,name),value);
     printf("name: %s result: %d \n", name, result);
 }
 

@@ -66,7 +66,7 @@ mesh_t process_mesh(struct aiMesh* aimesh, const struct aiScene* scene, char* di
             vertex.TexCoords.x = 0.0f;
             vertex.TexCoords.y = 0.0f; 
         }
-        printf("vertex[%d].TexCoords: [%f, %f]\n",i, vertex.TexCoords.x, vertex.TexCoords.y);
+        // printf("vertex[%d].TexCoords: [%f, %f]\n",i, vertex.TexCoords.x, vertex.TexCoords.y);
         
         array_push(msh.vertices,vertex);
     }
