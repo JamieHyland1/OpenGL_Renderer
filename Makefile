@@ -8,4 +8,4 @@ debug:
 run:
 	./renderer
 clean:
-	del renderer.exe
+	delete renderer.exe
