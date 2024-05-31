@@ -23,7 +23,7 @@
 #include "pthread.h"
 #include "mesh.h"
 #include "model.h"
-#define FPS 144
+#define FPS 60
 #define FRAME_TARGET_TIME  (1000 / FPS)
 #define NUM_SHADERS 2
 
@@ -115,7 +115,7 @@ int setup(void) {
     // set_material_specular(&mat,(vec3){0.5f, 0.5f, 0.5f});
     // set_material_shininess(&mat, 32.0f);
     
-    //load_model(&cubeModel,"./Res/Skull/Model/skull.obj");
+    load_model(&cubeModel,"./Res/Skull/Model/skull.obj");
     // printf("number of cube meshes: %d\n", array_length(cubeModel.meshes));
 
     // int full_screen_width = displayMode.w;
@@ -185,7 +185,7 @@ int init_openGL(){
         setup_mesh(&cubeModel.meshes[i]);
     }
 
-      glGenVertexArrays(1, &VAO);
+        glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
         glGenBuffers(1, &EBO);
 
@@ -214,7 +214,7 @@ int init_openGL(){
 
     glEnable(GL_DEPTH_TEST); 
     stbi_set_flip_vertically_on_load(true);
-    
+    test = init_texture("./Res/Skull/Model/texture_diffuse.png");
     return true;
 }
 
@@ -284,22 +284,21 @@ void render(void) {
     glClearColor(0.0f,0.2f,0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, test.id);
-    
-    glActiveTexture(GL_TEXTURE1); 
-    glBindTexture(GL_TEXTURE_2D, tex2.id);
+    glEnable(GL_TEXTURE_2D);
+
+
     
     use_shader(shader.shader_ID);
-    set_int(shader.shader_ID,"ourTexture",0);
-    set_int(shader.shader_ID,"texture2",1);
     set_float(shader.shader_ID,"time",time);
+    set_float(shader.shader_ID,"material.t",time);
     set_matrix(shader.shader_ID,"model", model);
     set_matrix(shader.shader_ID,"view", view);
     set_matrix(shader.shader_ID,"projection", projection);
-   // draw_model(&cubeModel,&shader);
-     glBindVertexArray(VAO); 
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    draw_model(&cubeModel,&shader);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
     SDL_GL_SwapWindow(window);
 }
 ///////////////////////////////////////////////////////////////////////////////

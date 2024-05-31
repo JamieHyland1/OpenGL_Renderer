@@ -1,13 +1,7 @@
 #version 330 core
 
-uniform sampler2D texture_diffuse1;
-uniform sampler2D texture_diffuse2;
-uniform sampler2D texture_diffuse3;
-uniform sampler2D texture_specular1;
-uniform sampler2D texture_specular2;
-
 struct Material {
-    sampler2D diffuse;
+    sampler2D texture_diffuse1;
     sampler2D specular;
     float     shininess;
 }; 
@@ -160,7 +154,7 @@ void main()
     //     result += calcPointLight(pointLights[i], norm, FragPos, viewDir); 
     // result += calcSpotLight(sLight, norm, FragPos, viewDir);
 
-    vec4 col = texture(material.diffuse, TexCoords);
+    vec4 col = texture(material.texture_diffuse1, TexCoords);
 
     FragColor = vec4(1,0.5,1,1);
 }

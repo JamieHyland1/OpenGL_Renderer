@@ -71,11 +71,11 @@ void draw_mesh(mesh_t* mesh, shader_t* shader){
             strcat(final_name,name);
             specularNr++;
         }
-        // printf("final name: [%s]\n",final_name);
-      //  set_int(shader->shader_ID,final_name,i);
-       // glBindTexture(GL_TEXTURE_2D, mesh->textures[i].id);
+        glBindTexture(GL_TEXTURE_2D, mesh->textures[i].id);
+        set_int(shader->shader_ID,"material.texture_diffuse1",0);
+        
     }
-   // glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE0);
 
     glBindVertexArray(mesh->VAO);
     glDrawElements(GL_TRIANGLES, array_length(mesh->indices), GL_UNSIGNED_INT, 0);
