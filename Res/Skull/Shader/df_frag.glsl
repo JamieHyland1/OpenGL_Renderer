@@ -10,6 +10,6 @@ void main()
 {
     float x = 0;
     x += time;
-    vec4 col = texture(texture_diffuse1, 1, x);
+    vec4 col = texture(texture_diffuse1, TexCoord);
     FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 }

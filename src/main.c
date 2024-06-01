@@ -84,7 +84,7 @@ int setup(void) {
     // set_material_specular(&mat,(vec3){0.5f, 0.5f, 0.5f});
     // set_material_shininess(&mat, 32.0f);
     
-    load_model(&cubeModel,"./Res/Cube/Model/cube.obj");
+    
     // printf("number of cube meshes: %d\n", array_length(cubeModel.meshes));
 
     // int full_screen_width = displayMode.w;
@@ -131,10 +131,12 @@ int setup(void) {
     return true; 
 }
 ///////////////////////////////////////////////////////////////////////////////
-// Init function for openGL to set its various parameters
+// Init function for openGL to set its various parameters and load models
 ///////////////////////////////////////////////////////////////////////////////
 int init_openGL(){
     printf("initialized shaders\n");
+    load_model(&cubeModel,"./Res/Cube/Model/cube.obj");
+    
     init_shader(&error_shader, "./shaders/ERROR_FRAG.glsl",   frag);
     init_shader(&error_shader, "./shaders/ERROR_VERTEX.glsl", vert);
     link_shader(&error_shader);
@@ -152,10 +154,8 @@ int init_openGL(){
     for(int i = 0; i < numMeshes; i++){
         setup_mesh(&cubeModel.meshes[i]);
     }
-
     glEnable(GL_DEPTH_TEST); 
     stbi_set_flip_vertically_on_load(true);
-    test = init_texture("./Res/Cube/Model/texture_diffuse.png");
     return true;
 }
 
@@ -227,8 +227,6 @@ void render(void) {
 
     glEnable(GL_TEXTURE_2D);
 
-
-    
     use_shader(shader.shader_ID);
     set_float(shader.shader_ID,"time",time);
     set_float(shader.shader_ID,"material.t",time);

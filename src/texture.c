@@ -16,6 +16,8 @@
 texture_t init_texture(const char* filename){
     texture_t texture;
     glGenTextures(1,&texture.id);
+    GLenum s = glGetError();
+    printf("enum: %d",s);
     glBindTexture(GL_TEXTURE_2D,texture.id);
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
