@@ -65,37 +65,6 @@ HANDLE shader_handle;
 // Setup function to initialize variables and game objects
 ///////////////////////////////////////////////////////////////////////////////
 
-
-
-float vertices[] = {
-       // positions          // colors           // texture coords
-     0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-     0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-    -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-    -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
-    };
-unsigned int indices[] = {  // note that we start from 0!
-    0, 1, 3,   // first triangle
-    1, 2, 3    // second triangle
-};
-
-float texCoords[] = {
-    0.5f, 1.0f,   // top-center corner
-    1.0f, 0.0f,   // lower-right corner
-    0.0f, 0.0f   // lower-left corner  
-};
-
-
-
-
-unsigned int VBO;
-unsigned int VAO;
-unsigned int EBO;
-texture_t tex2;
-
-
-
-
 int setup(void) {
     if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
     fprintf(stderr, "Error initializing SDL window");
@@ -115,7 +84,7 @@ int setup(void) {
     // set_material_specular(&mat,(vec3){0.5f, 0.5f, 0.5f});
     // set_material_shininess(&mat, 32.0f);
     
-    load_model(&cubeModel,"./Res/Skull/Model/skull.obj");
+    load_model(&cubeModel,"./Res/Cube/Model/cube.obj");
     // printf("number of cube meshes: %d\n", array_length(cubeModel.meshes));
 
     // int full_screen_width = displayMode.w;
@@ -123,8 +92,7 @@ int setup(void) {
     // window_width = full_screen_width;
     // window_height = full_screen_height;
 
-    test = init_texture("./textures/lffy.png");
-    tex2 = init_texture("./textures/gear5.jpg");
+
     stbi_set_flip_vertically_on_load(true);
 
     window = SDL_CreateWindow(
@@ -185,36 +153,9 @@ int init_openGL(){
         setup_mesh(&cubeModel.meshes[i]);
     }
 
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-        glGenBuffers(1, &EBO);
-
-        glBindVertexArray(VAO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-        // position attribute
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-        // color attribute
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-        // texture coord attribute
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-        glEnableVertexAttribArray(2);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0); 
-        
-        
-        glBindVertexArray(0); 
-
     glEnable(GL_DEPTH_TEST); 
     stbi_set_flip_vertically_on_load(true);
-    test = init_texture("./Res/Skull/Model/texture_diffuse.png");
+    test = init_texture("./Res/Cube/Model/texture_diffuse.png");
     return true;
 }
 
@@ -296,9 +237,6 @@ void render(void) {
     set_matrix(shader.shader_ID,"projection", projection);
     draw_model(&cubeModel,&shader);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
     SDL_GL_SwapWindow(window);
 }
 ///////////////////////////////////////////////////////////////////////////////

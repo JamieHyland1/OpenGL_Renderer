@@ -13,7 +13,7 @@
 #include "model.h"
 
 void load_model(model_t* model, char* path){
-    const struct aiScene* scene = aiImportFile(path, (aiProcess_Triangulate | aiProcess_FlipUVs));
+    const struct aiScene* scene = aiImportFile(path, (aiProcess_Triangulate));
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){
         printf("ERROR::ASSIMP::%s\n", aiGetErrorString());
         return;
@@ -35,7 +35,6 @@ void process_node(model_t* model, struct aiNode* node, const struct aiScene* sce
         mesh_t mesh;
         mesh = process_mesh(aimesh, scene, model->directory);
         array_push(model->meshes,mesh);
-        printf("model directory: %s\n", model->directory );
     }
     
     for(unsigned int i = 0; i < node->mNumChildren; i ++){
@@ -58,15 +57,14 @@ mesh_t process_mesh(struct aiMesh* aimesh, const struct aiScene* scene, char* di
         vertex.Normal.z = aimesh->mNormals[i].z;
 
         if(aimesh->mTextureCoords[0]){
-    
-            vertex.TexCoords.x = aimesh->mTextureCoords[0]->x;
-            vertex.TexCoords.y = aimesh->mTextureCoords[0]->y;
+            vertex.TexCoords.x = aimesh->mTextureCoords[0][i].x;
+            vertex.TexCoords.y = aimesh->mTextureCoords[0][i].y;
         }
         else{
             vertex.TexCoords.x = 0.0f;
             vertex.TexCoords.y = 0.0f; 
         }
-        // printf("vertex[%d].TexCoords: [%f, %f]\n",i, vertex.TexCoords.x, vertex.TexCoords.y);
+        
         
         array_push(msh.vertices,vertex);
     }
@@ -97,7 +95,6 @@ void load_material_textures(mesh_t* mesh, struct aiMaterial* mat, enum aiTexture
             strcat(path_to_tex,str.data);
             texture_t texture = init_texture(path_to_tex);
             texture.type = typeName;
-            printf("texture id: %d\n", texture.id);
             array_push(mesh->textures,texture);
             free(path_to_tex);
         }
@@ -110,7 +107,6 @@ void load_material_textures(mesh_t* mesh, struct aiMaterial* mat, enum aiTexture
 void draw_model(model_t* model,shader_t* shader){
     int numMeshes = array_length(model->meshes);
     for(unsigned int i = 0; i < numMeshes; i++){
-        
         draw_mesh(&model->meshes[i],shader);
     }
 }

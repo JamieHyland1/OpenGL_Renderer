@@ -16,20 +16,16 @@
 texture_t init_texture(const char* filename){
     texture_t texture;
     glGenTextures(1,&texture.id);
-  //  printf("texture id, %d",texture.id);
     glBindTexture(GL_TEXTURE_2D,texture.id);
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  //  printf("texture id, %d",texture.id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     unsigned char *data = stbi_load(filename,&texture.width,&texture.height,&texture.nrChannels,0);
-    printf("texture width, %d texture height: %d",texture.width,texture.height);
     if(data){
         glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA, texture.width,texture.height,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
-    //    // printf("texture id, %d",texture.id);
         //glGenerateMipmap(GL_TEXTURE_2D);
     }else{
         printf("Failed to load texture :( ");
