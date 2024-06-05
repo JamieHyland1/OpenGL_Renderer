@@ -36,6 +36,10 @@
         "vector": "c",
         "functional": "cpp",
         "stb_image.h": "c",
-        "cmath": "c"
+        "cmath": "c",
+        "stdint.h": "c",
+        "fileapi.h": "c",
+        "synchapi.h": "c",
+        "apiset.h": "c"
     }
 }

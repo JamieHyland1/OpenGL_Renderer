@@ -61,3 +61,9 @@ I won't go into much more detail you can see the code in the repo, however, I di
 
 I was also thinking of adding some sort of GUI to change uniforms and parameters in real time in the program, but after this I might just continue with [Learn OpenG](https://learnopengl.com/) tutorials, who knows?! I guess we'll find out in the next post :) If anyone actually reads this I appreciate it!
 
+# Custom 3D models! [05/06/24]
+So you may see the date of this post and the date of the last post and think *thats a long gap of time?* and youd be right! I had A LOT of issues with getting assimp, a 3d model loading library to work on my machine, I tried so many different options but every time I compiled the source I got different issues, anyway it left me feeling a bit dejected so I took some time off, I eventually got it working though! 
+
+![multiple_models](https://github.com/JamieHyland1/OpenGL_Renderer/assets/15105021/bd241387-fafe-4d6d-8a70-da931707729e)
+
+its not the fanciest of updates but this was the hardest thing I've done so far. I'm glad to have it done, although I did lose support for my lighting in the process but I will add that back in in the future!

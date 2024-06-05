@@ -50,6 +50,7 @@ mesh_t process_mesh(struct aiMesh* aimesh, const struct aiScene* scene, char* di
         vertex.Position.x = aimesh->mVertices[i].x;
         vertex.Position.y = aimesh->mVertices[i].y;
         vertex.Position.z = aimesh->mVertices[i].z;
+
         // process vertex positions, normals and texture coordinates
 
         vertex.Normal.x = aimesh->mNormals[i].x;
@@ -93,7 +94,6 @@ void load_material_textures(mesh_t* mesh, struct aiMaterial* mat, enum aiTexture
             char* path_to_tex = malloc(sizeof(char) * (strlen(directory) + strlen(str.data) + 1) );
             strcpy(path_to_tex,directory);
             strcat(path_to_tex,str.data);
-            printf("%s\n",path_to_tex);
             texture_t texture = init_texture(path_to_tex);
             texture.type = typeName;
             array_push(mesh->textures,texture);

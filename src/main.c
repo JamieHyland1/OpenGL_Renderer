@@ -41,10 +41,11 @@ shader_t shader;
 float time = 0;
 float fov = 45.0f;
 mat4 model,view,projection;
+shader_t skullShader;
 shader_t error_shader;
 shader_t shaders[NUM_SHADERS];
 HANDLE dwChangeHandles, files; 
-model_t cubeModel;
+model_t cubeModel, skullModel;
 OVERLAPPED  overlapped = {0};
 float p_angle = 45.0f;
 BYTE notifBuffer[4096];
@@ -136,6 +137,7 @@ int setup(void) {
 int init_openGL(){
     printf("initialized shaders\n");
     load_model(&cubeModel,"./Res/Cube/Model/cube.obj");
+    load_model(&skullModel,"./Res/Skull/Model/skull.obj");
     
     init_shader(&error_shader, "./shaders/ERROR_FRAG.glsl",   frag);
     init_shader(&error_shader, "./shaders/ERROR_VERTEX.glsl", vert);
@@ -153,6 +155,10 @@ int init_openGL(){
     int numMeshes = array_length(cubeModel.meshes);
     for(int i = 0; i < numMeshes; i++){
         setup_mesh(&cubeModel.meshes[i]);
+    }
+    int skullMesh = array_length(skullModel.meshes);
+    for(int i = 0; i < skullMesh; i ++){
+        setup_mesh(&skullModel.meshes[i]);
     }
     glEnable(GL_DEPTH_TEST); 
     stbi_set_flip_vertically_on_load(true);
@@ -233,8 +239,19 @@ void render(void) {
     set_matrix(shader.shader_ID,"model", model);
     set_matrix(shader.shader_ID,"view", view);
     set_matrix(shader.shader_ID,"projection", projection);
-    draw_model(&cubeModel,&shader);
+   draw_model(&cubeModel,&shader);
 
+    
+    glm_mat4_identity(model);
+    glm_translate(&model[0], (vec3){4.75,1.2,0.0});
+    glm_rotate_y(&model[0],-sin(time) * 5, &model[0]);
+    //use_shader(shader.shader_ID);
+    set_float(shader.shader_ID,"time",time);
+    set_float(shader.shader_ID,"material.t",time);
+    set_matrix(shader.shader_ID,"model", model);
+    set_matrix(shader.shader_ID,"view", view);
+    set_matrix(shader.shader_ID,"projection", projection);
+    draw_model(&skullModel,&shader);
     SDL_GL_SwapWindow(window);
 }
 ///////////////////////////////////////////////////////////////////////////////
