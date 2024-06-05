@@ -12,9 +12,12 @@
 ///////////////////////////////////
 
 //TODO: look into why setting mipmaps for texture causes seg fault :(
+
 texture_t init_texture(const char* filename){
     texture_t texture;
     glGenTextures(1,&texture.id);
+    GLenum s = glGetError();
+    printf("enum: %d",s);
     glBindTexture(GL_TEXTURE_2D,texture.id);
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
@@ -23,13 +26,15 @@ texture_t init_texture(const char* filename){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     unsigned char *data = stbi_load(filename,&texture.width,&texture.height,&texture.nrChannels,0);
-    
     if(data){
         glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA, texture.width,texture.height,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
+        //glGenerateMipmap(GL_TEXTURE_2D);
     }else{
-        printf("Failed to load texture :( %s\n" , filename);
+        printf("Failed to load texture :( ");
+
     }
 
     stbi_image_free(data);
+    
     return texture;
 }

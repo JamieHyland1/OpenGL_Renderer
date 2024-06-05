@@ -8,6 +8,7 @@ typedef struct{
     int height;
     int nrChannels;
     unsigned char *data;
+    char* type;
 }texture_t;
 
 texture_t init_texture(const char* filename);

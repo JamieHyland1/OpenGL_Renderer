@@ -56,7 +56,7 @@ bool init_shader(shader_t* shader,  GLchar* filename, Shader_Type type){
 
     glAttachShader(shader->shader_ID,shader->vertex_shader_ID);
     glAttachShader(shader->shader_ID,shader->fragment_shader_ID);
-
+    
     return true;
 }
 bool link_shader(shader_t* shader){
@@ -94,10 +94,9 @@ bool reload_shader(shader_t* shader){
 void load_error_shader(shader_t* shader, shader_t* err){
     glDeleteProgram((GLuint)shader->shader_ID);
     shader->shader_ID = err->shader_ID;
-     init_shader(err, "./shaders/ERROR_FRAG.glsl",   FRAGMENT);
+    init_shader(err, "./shaders/ERROR_FRAG.glsl",   FRAGMENT);
     init_shader(err, "./shaders/ERROR_VERTEX.glsl", VERTEX);
     link_shader(err);
-    return true;
 }
 void use_shader(int id){
     glUseProgram(id);
@@ -108,7 +107,12 @@ void set_bool  (int id, char* name, bool value){
 }
 
 void set_int   (int id, char* name, int value){
-    glUniform1i(glGetUniformLocation(id,name),value);
+    GLint location = glGetUniformLocation(id, name);
+    if (location == -1) {
+        printf("Warning: uniform '%s' [value: %d] not found in shader\n", name, value);
+       // return;
+    }
+    glUniform1i(location, value);
 }
 
 void set_float (int id, char* name, float value){
@@ -134,6 +138,7 @@ GLchar* get_shader_source(char* filename){
         buffer = malloc(( size + 1 ) * sizeof(buffer));
         fread(buffer,size,1,fp);
         buffer[size] = '\0';
+        // printf("buffer: %s \n", buffer);
         return buffer;
     }
     printf("something went wrong\n");
