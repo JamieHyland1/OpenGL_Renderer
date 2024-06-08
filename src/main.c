@@ -35,9 +35,9 @@ bool mouse_button_down = false;
 DWORD shaderStatus;
 Shader_Type frag = FRAGMENT;
 Shader_Type vert = VERTEX;
-vec3 cameraPos = {0.0f, 0.0f, 5.0f};
+vec3 cameraPos = {0.0f, 1.0f, 5.0f};
 vec3 up = {0.0f,1.0f,0.0f};
-shader_t shader;
+shader_t shader, shader2;
 float time = 0;
 float fov = 45.0f;
 mat4 model,view,projection;
@@ -45,7 +45,7 @@ shader_t skullShader;
 shader_t error_shader;
 shader_t shaders[NUM_SHADERS];
 HANDLE dwChangeHandles, files; 
-model_t cubeModel, skullModel;
+model_t cubes_model, floor_model;
 OVERLAPPED  overlapped = {0};
 float p_angle = 45.0f;
 BYTE notifBuffer[4096];
@@ -77,22 +77,12 @@ int setup(void) {
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
     SDL_DisplayMode displayMode;
-
     SDL_GetCurrentDisplayMode(0, &displayMode);
-    
-    // set_material_ambient(&mat, (vec3){1.0f, 0.5f, 0.31f});
-    // set_material_diffuse(&mat, (vec3){1.0f, 0.5f, 0.31f});
-    // set_material_specular(&mat,(vec3){0.5f, 0.5f, 0.5f});
-    // set_material_shininess(&mat, 32.0f);
-    
-    
-    // printf("number of cube meshes: %d\n", array_length(cubeModel.meshes));
 
     // int full_screen_width = displayMode.w;
     // int full_screen_height = displayMode.h;
     // window_width = full_screen_width;
     // window_height = full_screen_height;
-
 
     stbi_set_flip_vertically_on_load(true);
 
@@ -116,6 +106,7 @@ int setup(void) {
     }
 
     SDL_SetWindowBordered(window,SDL_WINDOWPOS_CENTERED);
+
     SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 5 );
     SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 5 );
     SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 5 );
@@ -126,7 +117,7 @@ int setup(void) {
     glewExperimental = GL_TRUE;
     
     glewInit();
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glPolygonMode(GL_BACK, GL_FILL);
     init_camera(cameraPos,up);
 
     return true; 
@@ -136,31 +127,44 @@ int setup(void) {
 ///////////////////////////////////////////////////////////////////////////////
 int init_openGL(){
     printf("initialized shaders\n");
-    load_model(&cubeModel,"./Res/Cube/Model/cube.obj");
-    load_model(&skullModel,"./Res/Skull/Model/skull.obj");
+    load_model(&cubes_model,"./Res/Containers/containers.obj");
+    load_model(&floor_model,"./Res/Containers/floor.obj");
     
     init_shader(&error_shader, "./shaders/ERROR_FRAG.glsl",   frag);
     init_shader(&error_shader, "./shaders/ERROR_VERTEX.glsl", vert);
     link_shader(&error_shader);
-
+    
     if(!init_shader(&shader, "./Res/Skull/Shader/obj_vert.glsl", vert)){
         printf("error intialising %s\n", "vertex shader");
         load_error_shader(&shader,&error_shader);
     }
+
     if(!init_shader(&shader, "./Res/Skull/Shader/obj_frag.glsl", frag)){
         printf("error intialising %s\n", "frag shader");
         load_error_shader(&shader,&error_shader);
     }
+    if(!init_shader(&shader2, "./Res/Skull/Shader/obj_vert.glsl", vert)){
+        printf("error intialising %s\n", "vertex shader");
+        load_error_shader(&shader,&error_shader);
+    }
+    if(!init_shader(&shader2, "./Res/Skull/Shader/obj_frag2.glsl", frag)){
+        printf("error intialising %s\n", "frag shader");
+        load_error_shader(&shader,&error_shader);
+    }
     link_shader(&shader);
-    int numMeshes = array_length(cubeModel.meshes);
+    link_shader(&shader2);
+    int numMeshes = array_length(cubes_model.meshes);
     for(int i = 0; i < numMeshes; i++){
-        setup_mesh(&cubeModel.meshes[i]);
+        setup_mesh(&cubes_model.meshes[i]);
     }
-    int skullMesh = array_length(skullModel.meshes);
+    int skullMesh = array_length(floor_model.meshes);
     for(int i = 0; i < skullMesh; i ++){
-        setup_mesh(&skullModel.meshes[i]);
+        setup_mesh(&floor_model.meshes[i]);
     }
-    glEnable(GL_DEPTH_TEST); 
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);  
+    glDepthFunc(GL_LESS); 
+    glMatrixMode(GL_PROJECTION);
     stbi_set_flip_vertically_on_load(true);
     return true;
 }
@@ -219,8 +223,11 @@ void update(void) {
     time = (float)SDL_GetTicks()/1000;
 
     glm_mat4_identity(model);
-    glm_rotate_y(&model[0],sin(time) * 5, &model[0]);
+    glm_translate(&model[0], (vec3){0.0,0.0,-10.0});
+   // glm_rotate_y(&model[0] ,time * 1.5, &model[0]);
+
     camera_look_at(&view);
+    p_angle = fov;
     glm_perspective(p_angle,(float)(window_width/window_height),0.1f,100.0f,projection);
     previous_frame_time = SDL_GetTicks();
 }
@@ -228,30 +235,40 @@ void update(void) {
 // Render function to draw objects on the display
 ///////////////////////////////////////////////////////////////////////////////
 void render(void) {
-    glClearColor(0.0f,0.2f,0.2f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+    glClearColor(0.0f,0.0f,0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); 
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);  
+    glStencilFunc(GL_ALWAYS, 1, 0xFF); // all fragments should pass the stencil test
+    glStencilMask(0xFF);
     glEnable(GL_TEXTURE_2D);
-
+    glStencilMask(0x00);
     use_shader(shader.shader_ID);
-    set_float(shader.shader_ID,"time",time);
-    set_float(shader.shader_ID,"material.t",time);
     set_matrix(shader.shader_ID,"model", model);
     set_matrix(shader.shader_ID,"view", view);
     set_matrix(shader.shader_ID,"projection", projection);
-   draw_model(&cubeModel,&shader);
+    draw_model(&floor_model,&shader);
 
-    
+    glStencilFunc(GL_ALWAYS, 1, 0xFF); 
+    glStencilMask(0xFF); 
+    draw_model(&cubes_model,&shader);
+
+    use_shader(shader2.shader_ID);
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilMask(0x00); 
+    glDisable(GL_DEPTH_TEST);
     glm_mat4_identity(model);
-    glm_translate(&model[0], (vec3){4.75,1.2,0.0});
-    glm_rotate_y(&model[0],-sin(time) * 5, &model[0]);
-    //use_shader(shader.shader_ID);
-    set_float(shader.shader_ID,"time",time);
-    set_float(shader.shader_ID,"material.t",time);
-    set_matrix(shader.shader_ID,"model", model);
-    set_matrix(shader.shader_ID,"view", view);
-    set_matrix(shader.shader_ID,"projection", projection);
-    draw_model(&skullModel,&shader);
+    glm_translate(&model[0], (vec3){0.0,0.0,-10.0});
+  //  glm_rotate_y(&model[0] ,time * 1.5, &model[0]);
+    vec3 scale = {1.05f,1.05f,1.05f};
+    glm_scale(&model[0], &scale[0]);
+    set_matrix(shader2.shader_ID,"model", model);
+    set_matrix(shader2.shader_ID,"view", view);
+    set_matrix(shader2.shader_ID,"projection", projection);
+    draw_model(&cubes_model,&shader2);
+    glStencilMask(0xFF);
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);   
+    glEnable(GL_DEPTH_TEST);  
+    
     SDL_GL_SwapWindow(window);
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -266,7 +283,6 @@ void free_resources(void) {
 int main(int argc, char* args[]){
     setup();
     is_running = init_openGL();
-    glViewport(0, 0, window_width, window_height);
     poll_shaders();
     while (is_running) {
         WaitForSingleObjectEx(shader_handle,0,TRUE); // check to see if any shaders have been changed

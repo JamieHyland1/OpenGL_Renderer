@@ -13,4 +13,5 @@ void main()
 {
     vec4 c = texture(material.texture_diffuse1,TexCoord);
     FragColor = c;
+    
 }
