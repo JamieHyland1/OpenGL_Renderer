@@ -37,13 +37,12 @@ Shader_Type frag = FRAGMENT;
 Shader_Type vert = VERTEX;
 vec3 cameraPos = {0.0f, 1.0f, 5.0f};
 vec3 up = {0.0f,1.0f,0.0f};
-shader_t shader, shader2;
+
 float time = 0;
 float fov = 45.0f;
 mat4 model,view,projection;
-shader_t skullShader;
-shader_t error_shader;
-shader_t shaders[NUM_SHADERS];
+
+
 HANDLE dwChangeHandles, files; 
 model_t cubes_model, floor_model;
 OVERLAPPED  overlapped = {0};
@@ -127,40 +126,10 @@ int setup(void) {
 ///////////////////////////////////////////////////////////////////////////////
 int init_openGL(){
     printf("initialized shaders\n");
-    load_model(&cubes_model,"./Res/Containers/containers.obj");
-    load_model(&floor_model,"./Res/Containers/floor.obj");
-    
-    init_shader(&error_shader, "./shaders/ERROR_FRAG.glsl",   frag);
-    init_shader(&error_shader, "./shaders/ERROR_VERTEX.glsl", vert);
-    link_shader(&error_shader);
-    
-    if(!init_shader(&shader, "./Res/Skull/Shader/obj_vert.glsl", vert)){
-        printf("error intialising %s\n", "vertex shader");
-        load_error_shader(&shader,&error_shader);
-    }
+    //Add models and shaders here:
+    // 
+    // 
 
-    if(!init_shader(&shader, "./Res/Skull/Shader/obj_frag.glsl", frag)){
-        printf("error intialising %s\n", "frag shader");
-        load_error_shader(&shader,&error_shader);
-    }
-    if(!init_shader(&shader2, "./Res/Skull/Shader/obj_vert.glsl", vert)){
-        printf("error intialising %s\n", "vertex shader");
-        load_error_shader(&shader,&error_shader);
-    }
-    if(!init_shader(&shader2, "./Res/Skull/Shader/obj_frag2.glsl", frag)){
-        printf("error intialising %s\n", "frag shader");
-        load_error_shader(&shader,&error_shader);
-    }
-    link_shader(&shader);
-    link_shader(&shader2);
-    int numMeshes = array_length(cubes_model.meshes);
-    for(int i = 0; i < numMeshes; i++){
-        setup_mesh(&cubes_model.meshes[i]);
-    }
-    int skullMesh = array_length(floor_model.meshes);
-    for(int i = 0; i < skullMesh; i ++){
-        setup_mesh(&floor_model.meshes[i]);
-    }
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);  
     glDepthFunc(GL_LESS); 
@@ -237,37 +206,9 @@ void update(void) {
 void render(void) {
     glClearColor(0.0f,0.0f,0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); 
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);  
-    glStencilFunc(GL_ALWAYS, 1, 0xFF); // all fragments should pass the stencil test
-    glStencilMask(0xFF);
-    glEnable(GL_TEXTURE_2D);
-    glStencilMask(0x00);
-    use_shader(shader.shader_ID);
-    set_matrix(shader.shader_ID,"model", model);
-    set_matrix(shader.shader_ID,"view", view);
-    set_matrix(shader.shader_ID,"projection", projection);
-    draw_model(&floor_model,&shader);
-
-    glStencilFunc(GL_ALWAYS, 1, 0xFF); 
-    glStencilMask(0xFF); 
-    draw_model(&cubes_model,&shader);
-
-    use_shader(shader2.shader_ID);
-    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-    glStencilMask(0x00); 
-    glDisable(GL_DEPTH_TEST);
-    glm_mat4_identity(model);
-    glm_translate(&model[0], (vec3){0.0,0.0,-10.0});
-  //  glm_rotate_y(&model[0] ,time * 1.5, &model[0]);
-    vec3 scale = {1.05f,1.05f,1.05f};
-    glm_scale(&model[0], &scale[0]);
-    set_matrix(shader2.shader_ID,"model", model);
-    set_matrix(shader2.shader_ID,"view", view);
-    set_matrix(shader2.shader_ID,"projection", projection);
-    draw_model(&cubes_model,&shader2);
-    glStencilMask(0xFF);
-    glStencilFunc(GL_ALWAYS, 1, 0xFF);   
-    glEnable(GL_DEPTH_TEST);  
+    // Add rendering code here:
+    // 
+    // 
     
     SDL_GL_SwapWindow(window);
 }
