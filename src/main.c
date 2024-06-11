@@ -41,7 +41,7 @@ vec3 up = {0.0f,1.0f,0.0f};
 float time = 0;
 float fov = 45.0f;
 mat4 model,view,projection;
-
+shader_t error_shader;
 
 HANDLE dwChangeHandles, files; 
 model_t cubes_model, floor_model;
@@ -126,6 +126,9 @@ int setup(void) {
 ///////////////////////////////////////////////////////////////////////////////
 int init_openGL(){
     printf("initialized shaders\n");
+    init_shader(&error_shader, "./shaders/ERROR_FRAG.glsl",   frag);
+    init_shader(&error_shader, "./shaders/ERROR_VERTEX.glsl", vert);
+    link_shader(&error_shader);
     //Add models and shaders here:
     // 
     // 
