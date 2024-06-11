@@ -91,13 +91,9 @@ void load_material_textures(mesh_t* mesh, struct aiMaterial* mat, enum aiTexture
         struct aiString str;
         enum aiReturn rtrn = aiGetMaterialTexture(mat,type,i,&str,NULL,NULL,NULL,NULL,NULL,NULL);
         if(rtrn == aiReturn_SUCCESS){
-            char* path_to_tex = malloc(sizeof(char) * (strlen(directory) + strlen(str.data) + 1) );
-            strcpy(path_to_tex,directory);
-            strcat(path_to_tex,str.data);
-            texture_t texture = init_texture(path_to_tex);
+            texture_t texture = init_texture(str.data);
             texture.type = typeName;
             array_push(mesh->textures,texture);
-            free(path_to_tex);
         }
         else if(rtrn == aiReturn_FAILURE){
             printf("error loading texture data\n");

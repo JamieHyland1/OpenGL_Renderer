@@ -107,12 +107,7 @@ void set_bool  (int id, char* name, bool value){
 }
 
 void set_int   (int id, char* name, int value){
-    GLint location = glGetUniformLocation(id, name);
-    if (location == -1) {
-        printf("Warning: uniform '%s' [value: %d] not found in shader\n", name, value);
-       // return;
-    }
-    glUniform1i(location, value);
+    glUniform1i(glGetUniformLocation(id, name), value);
 }
 
 void set_float (int id, char* name, float value){
