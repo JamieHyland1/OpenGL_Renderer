@@ -37,8 +37,8 @@ Shader_Type frag = FRAGMENT;
 Shader_Type vert = VERTEX;
 vec3 cameraPos = {0.0f, 1.0f, 5.0f};
 vec3 up = {0.0f,1.0f,0.0f};
-model_t window_model;
-model_t grass_model;
+model_t container_model;
+
 model_t floor_model;
 shader_t shader;
 float* dist_arr;
@@ -134,6 +134,30 @@ int init_openGL(){
     init_shader(&error_shader, "./shaders/ERROR_VERTEX.glsl", vert);
     link_shader(&error_shader);
     //Add models and shaders here:
+    init_shader(&shader, "./shaders/obj_vert.glsl", vert);
+    init_shader(&shader, "./shaders/obj_frag_diffuse.glsl", frag);
+    link_shader(&shader);
+
+    load_model(&floor_model,"./Models/Containers/floor.obj");
+    load_model(&container_model,"./Models/Containers/containers.obj");
+
+    int num_floor_msh = array_length(floor_model.meshes);
+    int num_container_msh = array_length(container_model.meshes);
+    
+    for(int i = 0; i <  num_floor_msh; i++){
+        setup_mesh(&floor_model.meshes[i]);
+    }
+    for(int i = 0; i <  num_container_msh; i++){
+        setup_mesh(&container_model.meshes[i]);
+    }
+
+    unsigned int fbo;
+    glGenBuffers(1,&fbo);
+
+    glBindBuffer(GL_FRAMEBUFFER,&fbo);
+    
+
+
     glEnable(GL_BLEND);     
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
     glEnable(GL_DEPTH_TEST);
@@ -215,13 +239,14 @@ void render(void) {
     // Add rendering code here:
     // 
     // 
-    // glm_mat4_identity(model);
-    // glm_translate(&model[0],(vec3){0.0,-1.0,0.0});
-    // use_shader(shader.shader_ID);
-    // set_matrix(shader.shader_ID,"model", model);
-    // set_matrix(shader.shader_ID,"view", view);
-    // set_matrix(shader.shader_ID,"projection", projection);
-
+    glm_mat4_identity(model);
+    glm_translate(&model[0],(vec3){0.0,-1.0,-5.0});
+    use_shader(shader.shader_ID);
+    set_matrix(shader.shader_ID,"model", model);
+    set_matrix(shader.shader_ID,"view", view);
+    set_matrix(shader.shader_ID,"projection", projection);
+    draw_model(&floor_model, &shader);
+    draw_model(&container_model, &shader);
     
 
     SDL_GL_SwapWindow(window);
