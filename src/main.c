@@ -134,29 +134,6 @@ int init_openGL(){
     init_shader(&error_shader, "./shaders/ERROR_VERTEX.glsl", vert);
     link_shader(&error_shader);
     //Add models and shaders here:
-    init_shader(&shader,"./shaders/obj_vert.glsl", vert);
-    init_shader(&shader,"./shaders/obj_frag_diffuse.glsl", frag);
-    link_shader(&shader);
-
-    load_model(&floor_model,  "./Models/Containers/floor.obj");
-    load_model(&window_model, "./Models/Blending/Window.obj");
-    load_model(&grass_model,  "./Models/Blending/Grass.obj");
-
-    int num_floor_meshes    = array_length(floor_model.meshes);
-    int num_window_meshes   = array_length(window_model.meshes);
-    int num_grass_meshes    = array_length(grass_model.meshes);
-
-    for(int i =0; i < num_floor_meshes; i++){
-        setup_mesh(&floor_model.meshes[i]);
-    }
-
-    for(int i =0; i < num_window_meshes; i++){
-        setup_mesh(&window_model.meshes[i]);
-    }
-    
-    for(int i =0; i < num_grass_meshes; i++){
-        setup_mesh(&grass_model.meshes[i]);
-    }
     glEnable(GL_BLEND);     
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
     glEnable(GL_DEPTH_TEST);
@@ -238,26 +215,14 @@ void render(void) {
     // Add rendering code here:
     // 
     // 
-    glm_mat4_identity(model);
-    glm_translate(&model[0],(vec3){0.0,-1.0,0.0});
-    use_shader(shader.shader_ID);
-    set_matrix(shader.shader_ID,"model", model);
-    set_matrix(shader.shader_ID,"view", view);
-    set_matrix(shader.shader_ID,"projection", projection);
+    // glm_mat4_identity(model);
+    // glm_translate(&model[0],(vec3){0.0,-1.0,0.0});
+    // use_shader(shader.shader_ID);
+    // set_matrix(shader.shader_ID,"model", model);
+    // set_matrix(shader.shader_ID,"view", view);
+    // set_matrix(shader.shader_ID,"projection", projection);
 
-    draw_model(&floor_model, &shader);
-    draw_model(&grass_model, &shader);
-    draw_model(&window_model,&shader);
-
-    glm_mat4_identity(model);
-    glm_translate(&model[0],(vec3){0.0,0.0,-2.0});
-    set_matrix(shader.shader_ID,"model", model);
-    draw_model(&window_model,&shader);
-
-    glm_mat4_identity(model);
-    glm_translate(&model[0],(vec3){1.0,0.0,0.5});
-    set_matrix(shader.shader_ID,"model", model);
-    draw_model(&window_model,&shader);
+    
 
     SDL_GL_SwapWindow(window);
 }
