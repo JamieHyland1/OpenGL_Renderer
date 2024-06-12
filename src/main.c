@@ -41,7 +41,7 @@ model_t window_model;
 model_t grass_model;
 model_t floor_model;
 shader_t shader;
-
+float* dist_arr;
 float time = 0;
 float fov = 45.0f;
 mat4 model,view,projection;
@@ -157,7 +157,8 @@ int init_openGL(){
     for(int i =0; i < num_grass_meshes; i++){
         setup_mesh(&grass_model.meshes[i]);
     }
-
+    glEnable(GL_BLEND);     
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);  
     glDepthFunc(GL_LESS); 
@@ -237,9 +238,9 @@ void render(void) {
     // Add rendering code here:
     // 
     // 
+    glm_mat4_identity(model);
+    glm_translate(&model[0],(vec3){0.0,-1.0,0.0});
     use_shader(shader.shader_ID);
-    set_float(shader.shader_ID,"time",time);
-    set_float(shader.shader_ID,"material.t",time);
     set_matrix(shader.shader_ID,"model", model);
     set_matrix(shader.shader_ID,"view", view);
     set_matrix(shader.shader_ID,"projection", projection);
@@ -247,6 +248,17 @@ void render(void) {
     draw_model(&floor_model, &shader);
     draw_model(&grass_model, &shader);
     draw_model(&window_model,&shader);
+
+    glm_mat4_identity(model);
+    glm_translate(&model[0],(vec3){0.0,0.0,-2.0});
+    set_matrix(shader.shader_ID,"model", model);
+    draw_model(&window_model,&shader);
+
+    glm_mat4_identity(model);
+    glm_translate(&model[0],(vec3){1.0,0.0,0.5});
+    set_matrix(shader.shader_ID,"model", model);
+    draw_model(&window_model,&shader);
+
     SDL_GL_SwapWindow(window);
 }
 ///////////////////////////////////////////////////////////////////////////////
