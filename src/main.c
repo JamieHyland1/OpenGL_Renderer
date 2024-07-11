@@ -41,18 +41,34 @@ model_t container_model;
 
 model_t floor_model;
 shader_t shader;
+shader_t quad_shader;
 float* dist_arr;
 float time = 0;
 float fov = 45.0f;
 mat4 model,view,projection;
 shader_t error_shader;
-
+bool enable_post_process = false;
 HANDLE dwChangeHandles, files; 
 model_t cubes_model, floor_model;
 OVERLAPPED  overlapped = {0};
 float p_angle = 45.0f;
 BYTE notifBuffer[4096];
 texture_t test;
+unsigned int quadVAO, quadVBO;
+
+unsigned int framebuffer;
+unsigned int textureColorbuffer;
+unsigned int rbo;
+float quadVertices[] = {  
+    // positions   // texCoords
+    -1.0f,  1.0f,  0.0f, 1.0f,
+    -1.0f, -1.0f,  0.0f, 0.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
+
+    -1.0f,  1.0f,  0.0f, 1.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f
+};	
 ///////////////////////////////////////////////////////////////////////////////
 // Global variables for execution status and renderer loop
 ///////////////////////////////////////////////////////////////////////////////
@@ -64,6 +80,46 @@ static SDL_Window* window = NULL;
 SDL_GLContext context = NULL;
 static SDL_Renderer* renderer = NULL;
 HANDLE shader_handle;
+
+
+
+
+void enable_post_processing(int window_width, int window_height){ 
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer); 
+
+    // Create a color attachment texture
+    glGenTextures(1, &textureColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Attach the color texture to the framebuffer
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+
+    // Create a renderbuffer object for depth and stencil attachment
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window_width, window_height);  
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    // Attach the renderbuffer object to the framebuffer
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+    // Check if the framebuffer is complete
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
+        printf("ERROR::FRAMEBUFFER:: Framebuffer is not complete!\n");
+    }
+
+    // Unbind the framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);  
+}
+
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Setup function to initialize variables and game objects
@@ -81,7 +137,7 @@ int setup(void) {
 
     SDL_DisplayMode displayMode;
     SDL_GetCurrentDisplayMode(0, &displayMode);
-
+    printf("window width: %d window height: %d\n",window_width, window_height);
     // int full_screen_width = displayMode.w;
     // int full_screen_height = displayMode.h;
     // window_width = full_screen_width;
@@ -118,7 +174,7 @@ int setup(void) {
     context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window,context);
     glewExperimental = GL_TRUE;
-    
+    glViewport(0, 0, window_width, window_height);  // Set the viewport to the size of the framebuffer
     glewInit();
     glPolygonMode(GL_BACK, GL_FILL);
     init_camera(cameraPos,up);
@@ -138,6 +194,10 @@ int init_openGL(){
     init_shader(&shader, "./shaders/obj_frag_diffuse.glsl", frag);
     link_shader(&shader);
 
+    init_shader(&quad_shader, "./shaders/quad_vert.glsl", vert);
+    init_shader(&quad_shader, "./shaders/quad_frag.glsl", frag);
+    link_shader(&quad_shader);
+
     load_model(&floor_model,"./Models/Containers/floor.obj");
     load_model(&container_model,"./Models/Containers/containers.obj");
 
@@ -150,13 +210,16 @@ int init_openGL(){
     for(int i = 0; i <  num_container_msh; i++){
         setup_mesh(&container_model.meshes[i]);
     }
-
-    unsigned int fbo;
-    glGenBuffers(1,&fbo);
-
-    glBindBuffer(GL_FRAMEBUFFER,&fbo);
-    
-
+    printf("window width: %d window height: %d\n",window_width, window_height);
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
     glEnable(GL_BLEND);     
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
@@ -165,6 +228,7 @@ int init_openGL(){
     glDepthFunc(GL_LESS); 
     glMatrixMode(GL_PROJECTION);
     stbi_set_flip_vertically_on_load(true);
+    enable_post_processing(window_width/2, window_height/2);
     return true;
 }
 
@@ -183,6 +247,9 @@ void process_input(void) {
             case SDL_KEYDOWN:
                 if(event.key.keysym.sym == SDLK_ESCAPE){
                     is_running = false;
+                }
+                else if(event.key.keysym.sym == SDLK_SPACE){
+                    enable_post_process = !enable_post_process;
                 }
                 process_keyboard_movement(event,1);
                 break;    
@@ -223,34 +290,67 @@ void update(void) {
 
     glm_mat4_identity(model);
     glm_translate(&model[0], (vec3){0.0,0.0,-10.0});
-   // glm_rotate_y(&model[0] ,time * 1.5, &model[0]);
+    //glm_rotate_y(&model[0] ,time * 1.5, &model[0]);
 
     camera_look_at(&view);
-    p_angle = fov;
-    glm_perspective(p_angle,(float)(window_width/window_height),0.1f,100.0f,projection);
+    float aspect_ratio = (float)window_width / (float)window_height;
+    glm_perspective(glm_rad(fov), aspect_ratio, 0.1f, 100.0f, projection);
     previous_frame_time = SDL_GetTicks();
 }
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Render function to draw objects on the display
 ///////////////////////////////////////////////////////////////////////////////
 void render(void) {
-    glClearColor(0.0f,0.0f,0.0f, 1.0f);
+    if(enable_post_process){
+        // Bind to framebuffer and draw scene as we normally would to color texture
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glViewport(0, 0, window_width/2, window_height/2);  // Set the viewport to the size of the framebuffer
+        
+    }
+    glEnable(GL_DEPTH_TEST); // Enable depth testing
+    // Clear the buffers
+    glClearColor(0.243f, 0.243f, 0.69f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); 
-    // Add rendering code here:
-    // 
-    // 
+    
+    // Add rendering code here
     glm_mat4_identity(model);
-    glm_translate(&model[0],(vec3){0.0,-1.0,-5.0});
+    glm_translate(&model[0], (vec3){0.0, -1.0, -5.0});
     use_shader(shader.shader_ID);
-    set_matrix(shader.shader_ID,"model", model);
-    set_matrix(shader.shader_ID,"view", view);
-    set_matrix(shader.shader_ID,"projection", projection);
+
+    set_int(shader.shader_ID, "quantize", 1);
+    set_matrix(shader.shader_ID, "model", model);
+    set_matrix(shader.shader_ID, "view", view);
+    set_matrix(shader.shader_ID, "projection", projection);
+    (enable_post_process) ? set_int(shader.shader_ID, "quantize", 8) : set_int(shader.shader_ID, "quantize", 1);
     draw_model(&floor_model, &shader);
     draw_model(&container_model, &shader);
-    
+
+    if(enable_post_process){
+        // Now bind back to the default framebuffer and draw a quad plane with the attached framebuffer color texture
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, window_width, window_height);  // Reset the viewport to the window size
+        glDisable(GL_DEPTH_TEST); // Disable depth test so screen-space quad isn't discarded due to depth test.
+        
+        // Clear all relevant buffers
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // Set clear color to white
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        use_shader(quad_shader.shader_ID);
+        
+        set_int(quad_shader.shader_ID, "screenWidth",  (int)window_width);
+        set_int(quad_shader.shader_ID, "screenHeight", (int)window_height);
+        glBindVertexArray(quadVAO);
+        glBindTexture(GL_TEXTURE_2D, textureColorbuffer); // Use the color attachment texture as the texture of the quad plane
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
 
     SDL_GL_SwapWindow(window);
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 // Free the memory that was dynamically allocated by the program
 ///////////////////////////////////////////////////////////////////////////////

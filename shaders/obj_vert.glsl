@@ -9,9 +9,17 @@ out vec3 aPos2;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-
+uniform int quantize;
 void main(){
     aPos2 = aPos;
-    gl_Position = projection * view * model * vec4(aPos,1.0f);
+    vec4 viewPosition = view * model * vec4(aPos, 1.0);
+    
+    if(quantize > 1)
+        viewPosition.xyz = floor(viewPosition.xyz * quantize) / quantize;
+    
+
+    // Transform the quantized position to clip space
+    gl_Position = projection * viewPosition;
+
     TexCoord = aTexCoords;
 }
