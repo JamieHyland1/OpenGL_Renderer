@@ -67,3 +67,13 @@ So you may see the date of this post and the date of the last post and think *th
 ![multiple_models](https://github.com/JamieHyland1/OpenGL_Renderer/assets/15105021/bd241387-fafe-4d6d-8a70-da931707729e)
 
 its not the fanciest of updates but this was the hardest thing I've done so far. I'm glad to have it done, although I did lose support for my lighting in the process but I will add that back in in the future!
+
+# Post proecessing! [11/07/24]
+So again another lengthy stretch between updates, I was quite sick with covid so excuse the absense! However! I have something fun to show, post processing! So if you're unaware post processing is the process of adding additional effects or techniques to an image before it reaches your screen! It usually involves some sort of improvement to the screen such as anti-aliasing, depth of field, bloom etc but I didnt't really add in any of that (yet ;) However! What I did manage to add was pretty neat if you dont mind me saying, so without further ado here it is: 
+![CRT output](https://github.com/JamieHyland1/OpenGL_Renderer/assets/15105021/8fc5bb42-644f-413d-8ac1-42fe830e6cca)
+
+
+
+Yes I decided to make a CRT shader! I really love the aestethic of old TV's and wanted to try recreate it now that I have frame buffers working! The main jist of the trick is that frame buffers allow me to rended the output of my scene onto a texture I then take that texture and apply it to a quad thats facing the camera, just like any other texture I can feed it into a shader and then do things to it to achieve certain effects. The main steps in this one are as follows:
+![crt shader](https://github.com/JamieHyland1/OpenGL_Renderer/assets/15105021/ba1dda2c-aeda-4a68-a17f-f0e720efcbe6)
+Apologies for the weird dancing around of the text! I'll try fix that in the future :D
