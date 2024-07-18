@@ -120,3 +120,25 @@ void get_camera_position(vec3* vec){
 void get_camera_direction(vec3* vec){
     glm_vec3_copy(&camera.direction[0],vec[0]);
 }
+
+void rotate_around_point(vec3 target, float radius, float angle, mat4* view) {
+    // Calculate the new camera position on the circular path
+    camera.position[0] = target[0] + radius * cosf(angle);
+    camera.position[1] = target[1];
+    camera.position[2] = target[2] + radius * sinf(angle);
+
+    // Update the camera's direction to always look at the target point
+    vec3 direction;
+    glm_vec3_sub(target, camera.position, direction);
+    glm_vec3_normalize(direction);
+    glm_vec3_copy(direction, camera.direction);
+
+    // Update the right and up vectors
+    glm_vec3_cross(camera.direction, camera.worldUp, camera.right);
+    glm_vec3_normalize(camera.right);
+    glm_vec3_cross(camera.right, camera.direction, camera.up);
+    glm_vec3_normalize(camera.up);
+
+    // Update the view matrix
+    glm_lookat_rh_no(camera.position, target, camera.up, view[0]);
+}

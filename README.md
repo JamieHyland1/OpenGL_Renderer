@@ -59,7 +59,7 @@ I won't go into much more detail you can see the code in the repo, however, I di
 
 ![hot_reloading](https://github.com/JamieHyland1/OpenGL_Renderer/assets/15105021/1f5d18cb-ba42-4c1c-926a-38b418cb54cb)
 
-I was also thinking of adding some sort of GUI to change uniforms and parameters in real time in the program, but after this I might just continue with [Learn OpenG](https://learnopengl.com/) tutorials, who knows?! I guess we'll find out in the next post :) If anyone actually reads this I appreciate it!
+I was also thinking of adding some sort of GUI to change uniforms and parameters in real time in the program, but after this I might just continue with [Learn OpenGL's](https://learnopengl.com/) tutorials, who knows?! I guess we'll find out in the next post :) If anyone actually reads this I appreciate it!
 
 # Custom 3D models! [05/06/24]
 So you may see the date of this post and the date of the last post and think *thats a long gap of time?* and youd be right! I had A LOT of issues with getting assimp, a 3d model loading library to work on my machine, I tried so many different options but every time I compiled the source I got different issues, anyway it left me feeling a bit dejected so I took some time off, I eventually got it working though! 
@@ -77,3 +77,16 @@ So again another lengthy stretch between updates, I was quite sick with covid so
 Yes I decided to make a CRT shader! I really love the aestethic of old TV's and wanted to try recreate it now that I have frame buffers working! The main jist of the trick is that frame buffers allow me to rended the output of my scene onto a texture I then take that texture and apply it to a quad thats facing the camera, just like any other texture I can feed it into a shader and then do things to it to achieve certain effects. The main steps in this one are as follows:
 ![crt shader](https://github.com/JamieHyland1/OpenGL_Renderer/assets/15105021/ba1dda2c-aeda-4a68-a17f-f0e720efcbe6)
 Apologies for the weird dancing around of the text! I'll try fix that in the future :D
+
+
+# CubeMaps! [18/07/2024]
+
+So this one is a bit shorter! Although I made something really cool this update so I'm quite happy :D This update was just getting cubemaps implemented in the renderer, they werent too hard to implement as I already had textures working, if you dont know what a cube map is, its essentially a giant texture that you wrap over a cube to create the sense of a world that your 3d objects live in, most cubemaps are just textures of skys and as they are usually the last thing drawn in a scene they are always far away and give an illusion of depth. However Skys are boring so I chose a city! 
+
+![yokohama_cubemap](https://github.com/user-attachments/assets/eb1b5565-8f8c-47ea-9cd2-7bb5525155bd)
+
+I chose a very nice cubemap of the city of Yokohama at night :D Then following [Learn OpenGL's](https://learnopengl.com/) tutorials, I added a sphere to my scene to test out sampling the cubemap for reflective surfaces which looked great! But I didnt stop there, I added my post processing effect from the last update to make a really cool vaporwave video!
+
+![A_night_in_yokohama](https://github.com/user-attachments/assets/f274f92c-141e-44cf-bd22-fecf8adf9ee2)
+
+Really happy with how this turned out! Its funny how something so simple can look so nice! The reception to it was also quite good! Very encouraging!
