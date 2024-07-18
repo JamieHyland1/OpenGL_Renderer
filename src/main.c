@@ -40,13 +40,16 @@ vec3 up = {0.0f,1.0f,0.0f};
 model_t container_model;
 
 model_t floor_model;
+model_t sphere_model;
 shader_t shader;
-shader_t quad_shader;
+shader_t post_process_shader;
 float* dist_arr;
 float time = 0;
 float fov = 45.0f;
 mat4 model,view,projection;
 shader_t error_shader;
+shader_t skybox_shader;
+shader_t mirror_shader;
 bool enable_post_process = false;
 HANDLE dwChangeHandles, files; 
 model_t cubes_model, floor_model;
@@ -54,11 +57,9 @@ OVERLAPPED  overlapped = {0};
 float p_angle = 45.0f;
 BYTE notifBuffer[4096];
 texture_t test;
-unsigned int quadVAO, quadVBO;
 
-unsigned int framebuffer;
-unsigned int textureColorbuffer;
-unsigned int rbo;
+float aspect_ratio;
+
 float quadVertices[] = {  
     // positions   // texCoords
     -1.0f,  1.0f,  0.0f, 1.0f,
@@ -69,6 +70,96 @@ float quadVertices[] = {
      1.0f, -1.0f,  1.0f, 0.0f,
      1.0f,  1.0f,  1.0f, 1.0f
 };	
+float cubeVertices[] = {
+        // positions          // normals
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+    };
+float skyboxVertices[] = {
+        // positions          
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
+    };
+
+shader_t post_process_shader;
 ///////////////////////////////////////////////////////////////////////////////
 // Global variables for execution status and renderer loop
 ///////////////////////////////////////////////////////////////////////////////
@@ -81,10 +172,25 @@ SDL_GLContext context = NULL;
 static SDL_Renderer* renderer = NULL;
 HANDLE shader_handle;
 
-
-
+unsigned int framebuffer;
+unsigned int textureColorbuffer;
+unsigned int rbo;
+unsigned int quadVAO, quadVBO;
+unsigned int cubeVAO, cubeVBO;
+unsigned int skyboxVAO, skyboxVBO;
+unsigned int cubeTexture;
 
 void enable_post_processing(int window_width, int window_height){ 
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
     glGenFramebuffers(1, &framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer); 
 
@@ -116,11 +222,6 @@ void enable_post_processing(int window_width, int window_height){
     // Unbind the framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 }
-
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Setup function to initialize variables and game objects
 ///////////////////////////////////////////////////////////////////////////////
@@ -138,10 +239,10 @@ int setup(void) {
     SDL_DisplayMode displayMode;
     SDL_GetCurrentDisplayMode(0, &displayMode);
     printf("window width: %d window height: %d\n",window_width, window_height);
-    // int full_screen_width = displayMode.w;
-    // int full_screen_height = displayMode.h;
-    // window_width = full_screen_width;
-    // window_height = full_screen_height;
+    int full_screen_width = displayMode.w;
+    int full_screen_height = displayMode.h;
+    window_width = full_screen_width;
+    window_height = full_screen_height;
 
     stbi_set_flip_vertically_on_load(true);
 
@@ -194,32 +295,49 @@ int init_openGL(){
     init_shader(&shader, "./shaders/obj_frag_diffuse.glsl", frag);
     link_shader(&shader);
 
-    init_shader(&quad_shader, "./shaders/quad_vert.glsl", vert);
-    init_shader(&quad_shader, "./shaders/quad_frag.glsl", frag);
-    link_shader(&quad_shader);
+    init_shader(&mirror_shader, "./shaders/mirror_vertex.glsl", vert);
+    init_shader(&mirror_shader, "./shaders/mirror_frag.glsl", frag);
+    link_shader(&mirror_shader);
+
+    init_shader(&post_process_shader, "./shaders/post_process_vert.glsl", vert);
+    init_shader(&post_process_shader, "./shaders/post_process_frag.glsl", frag);
+    link_shader(&post_process_shader);
+   
+    init_shader(&skybox_shader, "./shaders/skybox_vert.glsl", vert);
+    init_shader(&skybox_shader, "./shaders/skybox_frag.glsl", frag);
+    link_shader(&skybox_shader);
+
+    
 
     load_model(&floor_model,"./Models/Containers/floor.obj");
-    load_model(&container_model,"./Models/Containers/containers.obj");
+    load_model(&sphere_model, "./Models/Sphere/Sphere.obj");
 
-    int num_floor_msh = array_length(floor_model.meshes);
-    int num_container_msh = array_length(container_model.meshes);
+    int num_floor_msh  = array_length(floor_model.meshes);
+    int num_sphere_msh = array_length(sphere_model.meshes);
+
     
     for(int i = 0; i <  num_floor_msh; i++){
         setup_mesh(&floor_model.meshes[i]);
     }
-    for(int i = 0; i <  num_container_msh; i++){
-        setup_mesh(&container_model.meshes[i]);
+
+    for(int i = 0; i <  num_sphere_msh; i++){
+        setup_mesh(&sphere_model.meshes[i]);
     }
-    printf("window width: %d window height: %d\n",window_width, window_height);
-    glGenVertexArrays(1, &quadVAO);
-    glGenBuffers(1, &quadVBO);
-    glBindVertexArray(quadVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+
+
+    stbi_set_flip_vertically_on_load(false);
+
+
+    cubeTexture = init_cubemap("./textures/Yokohama/");
+
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
 
     glEnable(GL_BLEND);     
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
@@ -227,8 +345,7 @@ int init_openGL(){
     glEnable(GL_STENCIL_TEST);  
     glDepthFunc(GL_LESS); 
     glMatrixMode(GL_PROJECTION);
-    stbi_set_flip_vertically_on_load(true);
-    enable_post_processing(window_width/2, window_height/2);
+    enable_post_processing(window_width/2,window_height/2);
     return true;
 }
 
@@ -290,16 +407,13 @@ void update(void) {
 
     glm_mat4_identity(model);
     glm_translate(&model[0], (vec3){0.0,0.0,-10.0});
-    //glm_rotate_y(&model[0] ,time * 1.5, &model[0]);
+    glm_rotate_y(&model[0] ,time * 1.5, &model[0]);
 
     camera_look_at(&view);
-    float aspect_ratio = (float)window_width / (float)window_height;
+    aspect_ratio = (float)window_width / (float)window_height;
     glm_perspective(glm_rad(fov), aspect_ratio, 0.1f, 100.0f, projection);
     previous_frame_time = SDL_GetTicks();
 }
-
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Render function to draw objects on the display
@@ -318,44 +432,53 @@ void render(void) {
     
     // Add rendering code here
     glm_mat4_identity(model);
-    glm_translate(&model[0], (vec3){0.0, -1.0, -5.0});
     use_shader(shader.shader_ID);
 
-    set_int(shader.shader_ID, "quantize", 1);
     set_matrix(shader.shader_ID, "model", model);
     set_matrix(shader.shader_ID, "view", view);
     set_matrix(shader.shader_ID, "projection", projection);
-    (enable_post_process) ? set_int(shader.shader_ID, "quantize", 8) : set_int(shader.shader_ID, "quantize", 1);
-    draw_model(&floor_model, &shader);
-    draw_model(&container_model, &shader);
+
+    // draw_model(&floor_model, &shader);
+
+
+    use_shader(mirror_shader.shader_ID);
+     glm_rotate_y(&model[0] ,time *-1.5, &model[0]);
+    //glm_translate(&model[0], (vec3){0.0, 1.0, 0.0});
+    glm_scale(&model[0],(vec3){4.5,4.5,4.5});
+    set_matrix(mirror_shader.shader_ID, "model", model);
+    set_matrix(mirror_shader.shader_ID, "view", view);
+    set_matrix(mirror_shader.shader_ID, "projection", projection);
+    vec3 pos;
+    get_camera_position(&pos);
+    
+    set_vec3(mirror_shader.shader_ID, "cameraPos",&pos[0]);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubeTexture);
+    draw_model(&sphere_model, &mirror_shader);
+
+    rotate_around_point((vec3){0.0,3.5,0.0},28,time/4,&view);
+
+    draw_skybox();
 
     if(enable_post_process){
-        // Now bind back to the default framebuffer and draw a quad plane with the attached framebuffer color texture
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, window_width, window_height);  // Reset the viewport to the window size
-        glDisable(GL_DEPTH_TEST); // Disable depth test so screen-space quad isn't discarded due to depth test.
-        
-        // Clear all relevant buffers
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // Set clear color to white
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        use_shader(quad_shader.shader_ID);
-        
-        set_int(quad_shader.shader_ID, "screenWidth",  (int)window_width);
-        set_int(quad_shader.shader_ID, "screenHeight", (int)window_height);
-        glBindVertexArray(quadVAO);
-        glBindTexture(GL_TEXTURE_2D, textureColorbuffer); // Use the color attachment texture as the texture of the quad plane
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        run_post_processing();
     }
 
     SDL_GL_SwapWindow(window);
 }
-
 ///////////////////////////////////////////////////////////////////////////////
 // Free the memory that was dynamically allocated by the program
 ///////////////////////////////////////////////////////////////////////////////
 void free_resources(void) {
-
+// free(framebuffer);
+// free(textureColorbuffer);
+// free(rbo);
+// free(quadVAO);
+// free(quadVBO);
+// free(cubeVAO);
+// free(cubeVBO);
+// free(skyboxVAO); 
+// free(skyboxVBO);
+// free(cubeTexture);
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Main function
@@ -374,6 +497,50 @@ int main(int argc, char* args[]){
     return 0;
 }
 
+
+void draw_skybox(){
+    // draw skybox as last
+    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+    use_shader(skybox_shader.shader_ID);
+    glm_mat4_identity(view);
+    camera_look_at(&view);
+   // if(enable_post_process)glm_rotate_y(&view[0] ,time * 1.5, &view[0]);
+
+    view[3][0] = 0.0f;
+    view[3][1] = 0.0f;
+    view[3][2] = 0.0f;
+    view[3][3] = 1.0f; 
+
+    aspect_ratio = (float)window_width / (float)window_height;
+    glm_perspective(glm_rad(fov), aspect_ratio, 0.1f, 100.0f, projection);
+    set_matrix(skybox_shader.shader_ID, "view", view);
+    set_matrix(skybox_shader.shader_ID, "projection", projection);
+    // skybox cube
+    glBindVertexArray(skyboxVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubeTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    glDepthFunc(GL_LESS); // set depth function back to default
+}
+
+void run_post_processing(){
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, window_width, window_height);  // Reset the viewport to the window size
+        glDisable(GL_DEPTH_TEST); // Disable depth test so screen-space quad isn't discarded due to depth test.
+        
+        // Clear all relevant buffers
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // Set clear color to white
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        use_shader(post_process_shader.shader_ID);
+        
+        set_int(post_process_shader.shader_ID, "screenWidth",  (int)window_width);
+        set_int(post_process_shader.shader_ID, "screenHeight", (int)window_height);
+        glBindVertexArray(quadVAO);
+        glBindTexture(GL_TEXTURE_2D, textureColorbuffer); // Use the color attachment texture as the texture of the quad plane
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+}
 ///////////////////////////////////////////////////////////////////////////////
 // Poll shader directory for changes to shaders and reload if necessary
 ///////////////////////////////////////////////////////////////////////////////

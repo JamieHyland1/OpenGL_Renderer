@@ -40,6 +40,9 @@
         "stdint.h": "c",
         "fileapi.h": "c",
         "synchapi.h": "c",
-        "apiset.h": "c"
+        "apiset.h": "c",
+        "array": "c",
+        "xhash": "c",
+        "xtree": "c"
     }
 }

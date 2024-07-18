@@ -12,6 +12,6 @@ typedef struct{
 }texture_t;
 
 texture_t init_texture(const char* filename);
-
+unsigned int init_cubemap(const char* filepath);
 
 #endif

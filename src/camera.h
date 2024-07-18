@@ -27,4 +27,6 @@ void process_keyboard_movement(SDL_Event event, float delta_time);
 void updateCameraVectors(float delta_time);
 void get_camera_position(vec3* vec);
 void get_camera_direction(vec3* vec);
+void rotate_camera_y(float delta);
+void rotate_around_point(vec3 target, float radius, float angle, mat4* view);
 #endif

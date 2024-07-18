@@ -37,7 +37,7 @@ void main(){
     ivec2 pixelCoords = ivec2(gl_FragCoord.xy);
     vec3 brightenedColor;
 
-    if ((pixelCoords.x % 2 == 1) || (pixelCoords.y % 2 == 1)){
+    if ((pixelCoords.y % 2 == 1)){
         brightenedColor = vec3(0.0, 0.0, 0.0); // Set the fragment color to black
     }
     else{
