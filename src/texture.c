@@ -4,9 +4,10 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <C:\SDL2\include\SDL.h>
-#include "texture.h"
 #include "string.h"
-#include "array.h"
+#include "../include/headers/core.h"
+
+
 ///////////////////////////////////
 // This class handles textures
 // specifically loading texture data  

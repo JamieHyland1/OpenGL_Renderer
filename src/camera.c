@@ -1,11 +1,11 @@
 #include "../include/GL/glew.h"
 #include <C:\SDL2\include\SDL.h>
 #include <C:\SDL2\include\SDL_opengl.h>
-#include "../include/cglm/cglm.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "camera.h"
+#include "../include/headers/core.h"
+
 
 ///////////////////////////////////
 // This class handles camera movement
