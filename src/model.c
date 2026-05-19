@@ -1,16 +1,10 @@
 #include "../include/GL/glew.h"
-#include "C:/SDL2/include/SDL.h"
-#include "C:/SDL2/include/SDL_opengl.h"
-#include "../include/cglm/cglm.h"
-#include "../include/cglm/struct.h"
 #include "../include/assimp/scene.h"
 #include "../include/assimp/cimport.h"
 #include "../include/assimp/postprocess.h"
 #include "../include/assimp/material.h"
-#include "stb_image.h"
-#include "array.h"
-#include "texture.h"
-#include "model.h"
+#include "../include/headers/stb_image.h"
+#include "../include/headers/core.h"
 
 void load_model(model_t* model, char* path){
     const struct aiScene* scene = aiImportFile(path, (aiProcess_Triangulate));

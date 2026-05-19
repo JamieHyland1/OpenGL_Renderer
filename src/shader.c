@@ -4,9 +4,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <C:\SDL2\include\SDL.h>
-#include "shader.h"
-#include "../include/cglm/cglm.h"
-
+#include "../include/headers/core.h"
 
 ///////////////////////////////////
 // This class handles shaders

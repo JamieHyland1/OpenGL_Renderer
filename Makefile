@@ -1,12 +1,52 @@
+# Compiler
+CC = gcc
+
+# Output executable
+TARGET = renderer
+
+# Source files
+SRCS = ./src/*.c
+
+# Include paths
+INCLUDES = -IC:/SDL2/include \
+           -IC:/Assimp/include \
+           -IC:/Assimp/build/include \
+           -IC:/cglm/include \
+           -IC:/glew-2.1.0/include
+
+# Library paths
+LIB_PATHS = -LC:/SDL2/lib \
+            -LC:/glew-2.1.0/lib/Release/x64 \
+            -LC:/cglm/build \
+            -LC:/Assimp/build/lib \
+            -LC:/Assimp/build/bin
+
+# Libraries (order matters: mingw32 must come before SDL2main)
+LIBS = -lmingw32 -lSDL2main -lSDL2 -lopengl32 -lm -lglew32 -lcglm -lassimp
+
+# Compiler flags
+CFLAGS = -Wall -std=c99
+DEBUG_FLAGS = -g
+
+# Default target
 build:
-	clear
-	gcc -o ./renderer -Wall -std=c99 ./src/*.c -IC:/SDL2/include -IC:/Assimp/include -LC:/SDL2/lib/x64 -lSDL2main -lSDL2 -lopengl32 -lm -LC:/glew-2.1.0/lib/Release/x64 -lglew32 -LC:/cglm-master/build -lcglm-0 -LC:/Assimp/bin -lassimp-vc142-mtd
-	./renderer
+	cls
+	$(CC) -o ./$(TARGET) $(CFLAGS) $(SRCS) $(INCLUDES) $(LIB_PATHS) $(LIBS)
+
+# Debug build
 debug-build:
-	gcc -o ./renderer -g -Wall -std=c99 ./src/*.c -IC:/SDL2/include -IC:/Assimp/include -LC:/SDL2/lib/x64 -lSDL2main -lSDL2 -lopengl32 -lm -LC:/glew-2.1.0/lib/Release/x64 -lglew32 -LC:/cglm-master/build -lcglm-0 -LC:/Assimp/bin -lassimp-vc142-mtd
+	$(CC) -o ./$(TARGET) $(DEBUG_FLAGS) $(CFLAGS) $(SRCS) $(INCLUDES) $(LIB_PATHS) $(LIBS)
+
+# Debug with GDB
 debug:
-	gdb  renderer.exe 
+	gdb $(TARGET).exe
+
+# Run the program
 run:
-	./renderer
+	./$(TARGET)
+
+# Clean build artifacts
 clean:
-	rm renderer.exe
+	rm $(TARGET).exe
+
+.PHONY: build debug-build debug run clean

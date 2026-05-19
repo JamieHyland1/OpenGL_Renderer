@@ -1,11 +1,11 @@
 #include "../include/GL/glew.h"
 #include <C:\SDL2\include\SDL.h>
 #include <C:\SDL2\include\SDL_opengl.h>
-#include "../include/cglm/cglm.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "material.h"
+#include "../include/headers/core.h"
+
 
 void set_material_ambient(material_t* mat,  vec3 ambient){
     glm_vec3_copy(&ambient[0],&mat->ambient[0]);

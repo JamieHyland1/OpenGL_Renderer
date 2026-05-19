@@ -1,16 +1,9 @@
 #include <stdio.h>
-#include "array.h"
-#include "shader.h"
-#include "mesh.h"
 #include "../include/GL/glew.h"
 #include <C:\SDL2\include\SDL.h>
 #include <C:\SDL2\include\SDL_opengl.h>
-#include "../include/cglm/cglm.h"
-#include "../include/cglm/struct.h"
 #include "string.h"
-#include "vertex.h"
-#include "texture.h"
-
+#include "../include/headers/core.h"
 void setup_mesh(mesh_t* mesh){
     glGenVertexArrays(1, &mesh->VAO);
     glGenBuffers(1, &mesh->VBO);
