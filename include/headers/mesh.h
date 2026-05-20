@@ -8,6 +8,7 @@
 #include "vertex.h"
 #include "texture.h"
 #include "shader.h"
+
 // /////////////////////////////////////////////////////////////////////////////////////////
 // // Define a struct for dynamic size meshes
 // ////////////////////////////////////////////////////////////////////////////////////////
@@ -19,6 +20,8 @@ typedef struct {
     GLuint VBO;
     GLuint EBO;
 } mesh_t;
+
+
 void setup_mesh(mesh_t* mesh);
 void draw_mesh(mesh_t* mesh, shader_t* shader);
 #endif

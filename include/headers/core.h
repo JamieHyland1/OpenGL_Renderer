@@ -8,5 +8,5 @@
 #include "mesh.h"
 #include "shader.h"
 #include "vertex.h"
-
+#include "model.h"
 #endif

@@ -45,6 +45,10 @@ unsigned int cubeTexture;
 int init_openGL()
 {
     printf("initialized shaders\n");
+/* init_shader(&mirror_shader, "./shaders/mirror_vertex.glsl", vert);
+    init_shader(&mirror_shader, "./shaders/mirror_frag.glsl", frag);
+    link_shader(&mirror_shader); */
+
     stbi_set_flip_vertically_on_load(false);
     return true;
 }
