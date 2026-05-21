@@ -1,0 +1,13 @@
+CompileFlags:
+  Compiler: C:/TDM-GCC-64/bin/gcc.exe
+  Add:
+    - "--target=x86_64-w64-mingw32"
+    - "-xc"
+    - "-IC:/SDL2/include"
+    - "-IC:/Assimp/include"
+    - "-IC:/Assimp/build/include"
+    - "-IC:/cglm/include"
+    - "-IC:/glew-2.1.0/include"
+    - "-I./include"
+    - "-std=c99"
+    - "-Wall"

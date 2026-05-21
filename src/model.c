@@ -62,18 +62,24 @@ static mesh_t process_mesh(struct aiMesh* aimesh, const struct aiScene* scene, c
         mesh.vertices[i] = vertex;        
     }
 
-    for(unsigned int i = 0; i < aimesh->mNumFaces; i ++){
-        struct aiFace face =  aimesh->mFaces[i];
-        errno = 0;
-        mesh.indices = malloc(sizeof(int) * face.mNumIndices);
-        if(mesh.indices == NULL){
-            fprintf(stderr, "malloc failed allocating vertices for mesh: %s\n", strerror(errno));
-        }
+        size_t total_indices = aimesh->mNumFaces * 3;
 
-        for(unsigned int j = 0; j < face.mNumIndices; j++){
-           mesh.indices[i] = face.mIndices;
+        errno = 0;
+        mesh.indices = malloc(sizeof(unsigned int) * total_indices);
+        if (mesh.indices == NULL) {
+            fprintf(stderr, "malloc failed allocating indices for mesh: %s\n", strerror(errno));
+            return mesh;
         }
-    }
+        mesh.num_indices = total_indices;
+
+        // Copy indices from each face
+        size_t idx = 0;
+        for (unsigned int i = 0; i < aimesh->mNumFaces; i++) {
+            struct aiFace face = aimesh->mFaces[i];
+            for (unsigned int j = 0; j < face.mNumIndices; j++) {
+                mesh.indices[idx++] = face.mIndices[j];
+            }
+        }
 
     if(aimesh->mMaterialIndex >= 0){
         struct aiMaterial *material = scene->mMaterials[aimesh->mMaterialIndex];
@@ -126,7 +132,7 @@ bool load_model(model_t* model, char* path){
 
 
 void draw_model(model_t* model,shader_t* shader){
-    int numMeshes = array_length(model->meshes);
+    size_t numMeshes = model->num_meshes;
     for(unsigned int i = 0; i < numMeshes; i++){
         draw_mesh(&model->meshes[i],shader);
     }

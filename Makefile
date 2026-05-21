@@ -8,10 +8,12 @@ TARGET = renderer
 SRCS = ./src/*.c
 
 # Include paths
-INCLUDES = -IC:/SDL2/include \
-           -IC:/Assimp/include \
+INCLUDES = -I./include               \
+	   -I./include/headers 	     \
+	   -IC:/SDL2/include         \
+           -IC:/Assimp/include       \
            -IC:/Assimp/build/include \
-           -IC:/cglm/include \
+           -IC:/cglm/include         \
            -IC:/glew-2.1.0/include
 
 # Library paths

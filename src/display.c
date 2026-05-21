@@ -1,8 +1,8 @@
-#include "../include/GL/glew.h"
-#include <C:\SDL2\include\SDL.h>
-#include <C:\SDL2\include\SDL_opengl.h>
-#include "../include/headers/display.h"
-#include "../include/headers/camera.h"
+#include <GL/glew.h>
+#include "display.h"
+#include "camera.h"
+#include "display.h"
+#include "camera.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -14,6 +14,7 @@ static int window_height = 600;
 
 static SDL_Window *window = NULL;
 SDL_GLContext context = NULL;
+
 static SDL_Renderer *renderer = NULL;
 
 vec3 cameraPos = {0.0f, 1.0f, 5.0f};
@@ -30,10 +31,12 @@ int setup(void)
         fprintf(stderr, "Error initializing SDL window");
         return false;
     }
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
+    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
     SDL_DisplayMode displayMode;
     SDL_GetCurrentDisplayMode(0, &displayMode);
@@ -84,4 +87,15 @@ int get_window_width(){
 
 int get_window_height(){
   return window_height;
+}
+
+void cancel_renderer(){
+    is_running = false;
+}
+
+bool get_running_status(){
+    return is_running;
+}
+SDL_Window* get_window(){
+    return window;
 }

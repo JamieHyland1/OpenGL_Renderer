@@ -1,9 +1,11 @@
 #include <stdio.h>
-#include "../include/GL/glew.h"
-#include <C:\SDL2\include\SDL.h>
-#include <C:\SDL2\include\SDL_opengl.h>
+#include <GL/glew.h>
+#include <SDL.h>
+#include <SDL_opengl.h>
 #include "string.h"
-#include "../include/headers/core.h"
+#include "core.h"
+
+
 void setup_mesh(mesh_t* mesh){
     glGenVertexArrays(1, &mesh->VAO);
     glGenBuffers(1, &mesh->VBO);
@@ -12,10 +14,10 @@ void setup_mesh(mesh_t* mesh){
     glBindVertexArray(mesh->VAO);
     glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
 
-    glBufferData(GL_ARRAY_BUFFER, array_length(mesh->vertices) * sizeof(vertex_t), &mesh->vertices[0], GL_STATIC_DRAW);  
+    glBufferData(GL_ARRAY_BUFFER, mesh->num_vertices * sizeof(vertex_t), &mesh->vertices[0], GL_STATIC_DRAW);  
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, array_length(mesh->indices) * sizeof(unsigned int), &mesh->indices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->num_indices * sizeof(unsigned int), &mesh->indices[0], GL_STATIC_DRAW);
 
     // vertex positions
     glEnableVertexAttribArray(0);	
@@ -33,7 +35,7 @@ void setup_mesh(mesh_t* mesh){
 void draw_mesh(mesh_t* mesh, shader_t* shader) {
     unsigned int diffuseNr  = 1;
     unsigned int specularNr = 1;
-    int numTextures = array_length(mesh->textures);
+    int numTextures = mesh->num_textures;
 
     for (int i = 0; i < numTextures; i++) {
         glActiveTexture(GL_TEXTURE0 + i);
@@ -55,6 +57,6 @@ void draw_mesh(mesh_t* mesh, shader_t* shader) {
     glActiveTexture(GL_TEXTURE0);
 
     glBindVertexArray(mesh->VAO);
-    glDrawElements(GL_TRIANGLES, array_length(mesh->indices), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, mesh->num_indices, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }

@@ -1,0 +1,26 @@
+#ifndef object_h
+#define object_h
+
+#include <cglm/cglm.h>
+#include <stdbool.h>
+
+#include "shader.h"
+#include "model.h"
+
+typedef struct {
+    model_t*  model;
+    shader_t* shader;
+    vec3      position;
+    vec3      rotation;
+    vec3      scale;
+} object_t;
+
+bool init_object(object_t* obj,
+                 const char* model_path,
+                 const char* vert_path,
+                 const char* frag_path);
+
+void free_object(object_t* obj);
+void draw_object(const object_t* obj);
+
+#endif

@@ -1,11 +1,10 @@
 #ifndef mesh_h
 #define mesh_h
-#include "../include/GL/glew.h"
-#include <C:\SDL2\include\SDL.h>
-#include <C:\SDL2\include\SDL_opengl.h>
-#include "../include/cglm/cglm.h"
-#include "../include/cglm/struct.h"
-#include "vertex.h"
+#include <GL/glew.h>
+#include <SDL.h>
+#include <SDL_opengl.h>
+#include <cglm/cglm.h>          
+#include <cglm/struct.h>        
 #include "texture.h"
 #include "shader.h"
 
@@ -13,9 +12,12 @@
 // // Define a struct for dynamic size meshes
 // ////////////////////////////////////////////////////////////////////////////////////////
 typedef struct {
-    vertex_t* vertices; // Dynamic array
-    texture_t* textures; // Mesh png texture pointer
-    int* indices; // dynamic array
+    vertex_t* vertices; 
+    texture_t* textures; 
+    size_t num_vertices;
+    size_t num_textures;
+    int* indices; 
+    size_t num_indices;
     GLuint VAO;
     GLuint VBO;
     GLuint EBO;
