@@ -11,6 +11,9 @@ void render(void)
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.243f, 0.243f, 0.69f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    SDL_GL_SwapWindow(get_window());
+
+    draw_object(&object);              // 1. draw into back buffer
+
+    SDL_GL_SwapWindow(get_window());   // 2. THEN swap it to the screen
 }
 

@@ -25,7 +25,7 @@ vec3 up = {0.0f, 1.0f, 0.0f};
 // Setup function to initialize variables and game objects
 ///////////////////////////////////////////////////////////////////////////////
 
-int setup(void)
+bool setup(void)
 {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
     {
@@ -79,6 +79,8 @@ int setup(void)
     glPolygonMode(GL_BACK, GL_FILL);
     init_camera(cameraPos, up);
 
+
+
     return true;
 }
 
@@ -90,6 +92,10 @@ int get_window_height(){
   return window_height;
 }
 
+void set_running_status(bool status){
+    is_running =  status;
+}
+
 void cancel_renderer(){
     is_running = false;
 }
@@ -97,6 +103,7 @@ void cancel_renderer(){
 bool get_running_status(){
     return is_running;
 }
+
 SDL_Window* get_window(){
     return window;
 }

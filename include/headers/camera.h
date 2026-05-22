@@ -20,6 +20,8 @@ typedef struct {
     float roll;
 } camera_t;
 
+extern camera_t camera;
+
 void init_camera(vec3 position, vec3 w_up);
 void camera_look_at(mat4* view);
 void process_mouse_move(float xPos, float yPos, float delta_time);

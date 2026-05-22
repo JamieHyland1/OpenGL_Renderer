@@ -1,140 +1,185 @@
-#include "../include/GL/glew.h"
+#include "shader.h"
 #include <stdio.h>
-#include <stdbool.h>
 #include <stdlib.h>
-#include <ctype.h>
-#include <SDL2/SDL.h>
-#include "../include/headers/core.h"
 
-///////////////////////////////////
-// This class handles shaders
-// specifically initializing  them,  
-// using them and passing various uniforms at runtime 
-///////////////////////////////////
-bool init_shader(shader_t* shader,  GLchar* filename, Shader_Type type){
-    if(type == VERTEX){
-        shader->vertex_source   = get_shader_source(filename);
-        shader->path_to_vert = filename;
-    }else if(type == FRAGMENT){
-        shader->fragment_source = get_shader_source(filename);
-        shader->path_to_frag = filename;
+///////////////////////////////////////////////////////////////////////////////
+// Read a shader file into a newly-allocated, null-terminated buffer.
+// Caller must free() the result.
+///////////////////////////////////////////////////////////////////////////////
+GLchar* get_shader_source(const char* filename) {
+    FILE* fp = fopen(filename, "rb");
+    if (!fp) {
+        fprintf(stderr, "ERROR::SHADER::Could not open file: %s\n", filename);
+        return NULL;
     }
+
+    fseek(fp, 0, SEEK_END);
+    long size = ftell(fp);
+    rewind(fp);
+
+    if (size < 0) {
+        fclose(fp);
+        return NULL;
+    }
+
+    GLchar* buffer = malloc((size_t)size + 1);
+    if (!buffer) {
+        fprintf(stderr, "ERROR::SHADER::malloc failed for %s\n", filename);
+        fclose(fp);
+        return NULL;
+    }
+
+    size_t read = fread(buffer, 1, (size_t)size, fp);
+    buffer[read] = '\0';
+    fclose(fp);
+    return buffer;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Compile one shader stage. Returns the shader object ID, or 0 on failure.
+///////////////////////////////////////////////////////////////////////////////
+static GLuint compile_stage(const GLchar* source, GLenum gl_type, const char* type_name) {
+    GLuint id = glCreateShader(gl_type);
+    glShaderSource(id, 1, &source, NULL);
+    glCompileShader(id);
+
     int success;
-    char infoLog[512];
-
-
-    //if file reading was successful link and compile vertex and fragment shaders
-    if(type == VERTEX && shader->vertex_source != NULL){
-        shader->vertex_shader_ID = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(shader->vertex_shader_ID,1,&shader->vertex_source,NULL);
-        glCompileShader(shader->vertex_shader_ID);
-
-        glGetShaderiv(shader->vertex_shader_ID,GL_COMPILE_STATUS,&success);
-
-        if (!success){
-            glGetShaderInfoLog(shader->vertex_shader_ID, 512, NULL, infoLog);
-            printf("ERROR::SHADER::VERTEX::COMPILATION_FAILED %s\n", infoLog);
-            return false;
-        }
+    glGetShaderiv(id, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char info_log[512];
+        glGetShaderInfoLog(id, sizeof(info_log), NULL, info_log);
+        fprintf(stderr, "ERROR::SHADER::%s::COMPILATION_FAILED\n%s\n", type_name, info_log);
+        glDeleteShader(id);
+        return 0;
     }
-
-    if(type == FRAGMENT && shader->fragment_source != NULL){
-        shader->fragment_shader_ID = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(shader->fragment_shader_ID,1,&shader->fragment_source,NULL);
-        glCompileShader(shader->fragment_shader_ID);
-
-        glGetShaderiv(shader->fragment_shader_ID,GL_COMPILE_STATUS,&success);
-        if (!success){
-            glGetShaderInfoLog(shader->fragment_shader_ID, 512, NULL, infoLog);
-            printf("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED %s\n", infoLog);
-            return false;
-        }
-    }
-    shader->shader_ID = glCreateProgram();
-
-    glAttachShader(shader->shader_ID,shader->vertex_shader_ID);
-    glAttachShader(shader->shader_ID,shader->fragment_shader_ID);
-    
-    return true;
+    return id;
 }
-bool link_shader(shader_t* shader){
+
+///////////////////////////////////////////////////////////////////////////////
+// Load, compile, and link both shader stages into a program in one call.
+///////////////////////////////////////////////////////////////////////////////
+bool init_shader(shader_t* shader, const char* vert_path, const char* frag_path) {
+    GLchar* vert_source = get_shader_source(vert_path);
+    GLchar* frag_source = get_shader_source(frag_path);
+
+    if (!vert_source || !frag_source) {
+        free(vert_source);
+        free(frag_source);
+        return false;
+    }
+
+    GLuint vert_id = compile_stage(vert_source, GL_VERTEX_SHADER, "VERTEX");
+    if (vert_id == 0) {
+        free(vert_source);
+        free(frag_source);
+        return false;
+    }
+
+    GLuint frag_id = compile_stage(frag_source, GL_FRAGMENT_SHADER, "FRAGMENT");
+    if (frag_id == 0) {
+        glDeleteShader(vert_id);
+        free(vert_source);
+        free(frag_source);
+        return false;
+    }
+
+    // Link
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vert_id);
+    glAttachShader(program, frag_id);
+    glLinkProgram(program);
+
     int success;
-    char infoLog[512];
-    glLinkProgram(shader->shader_ID);
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
 
-    glGetProgramiv(shader->shader_ID, GL_LINK_STATUS, &success);
-    if(!success){
-        glGetProgramInfoLog(shader->shader_ID, 512, NULL, infoLog);
-        printf("ERROR::SHADER::PROGRAM::LINKING_FAILED%s\n", infoLog);
+    // Shader objects are no longer needed once linked (or on failure)
+    glDeleteShader(vert_id);
+    glDeleteShader(frag_id);
+
+    if (!success) {
+        char info_log[512];
+        glGetProgramInfoLog(program, sizeof(info_log), NULL, info_log);
+        fprintf(stderr, "ERROR::SHADER::PROGRAM::LINKING_FAILED\n%s\n", info_log);
+        glDeleteProgram(program);
+        free(vert_source);
+        free(frag_source);
         return false;
     }
-    // delete shaders once linked successfully
-    glDeleteShader(shader->vertex_shader_ID);
-    glDeleteShader(shader->fragment_shader_ID);
+
+    // Success - store everything in the struct
+    shader->shader_ID       = program;
+    shader->vertex_source   = vert_source;
+    shader->fragment_source = frag_source;
+    shader->path_to_vert    = vert_path;
+    shader->path_to_frag    = frag_path;
 
     return true;
 }
 
-bool reload_shader(shader_t* shader){
-    shader_t new_shader;
-    if(!init_shader(&new_shader,   (char*)shader->path_to_frag,FRAGMENT))
-        return false;
-    if(!init_shader(&new_shader, (char*)shader->path_to_vert,VERTEX))
-        return false;
-    if(!link_shader(&new_shader))
-        return false;
-    
-    glDeleteProgram((GLuint)shader->shader_ID);
-    shader->shader_ID = new_shader.shader_ID;
+///////////////////////////////////////////////////////////////////////////////
+// Rebuild from source files. Keeps the old program if reload fails.
+///////////////////////////////////////////////////////////////////////////////
+bool reload_shader(shader_t* shader) {
+    shader_t tmp = {0};
+
+    if (!init_shader(&tmp, shader->path_to_vert, shader->path_to_frag)) {
+        return false;   // old shader untouched, keep rendering with it
+    }
+
+    // Success - discard the old program + sources, swap in the new
+    glDeleteProgram(shader->shader_ID);
+    free(shader->vertex_source);
+    free(shader->fragment_source);
+
+    *shader = tmp;
+
+    printf("Reloaded shader: %s / %s\n", shader->path_to_vert, shader->path_to_frag);
     return true;
 }
 
-void load_error_shader(shader_t* shader, shader_t* err){
-    glDeleteProgram((GLuint)shader->shader_ID);
+///////////////////////////////////////////////////////////////////////////////
+// Point a broken shader at the prebuilt error program.
+///////////////////////////////////////////////////////////////////////////////
+void load_error_shader(shader_t* shader, shader_t* err) {
     shader->shader_ID = err->shader_ID;
-    init_shader(err, "./shaders/ERROR_FRAG.glsl",   FRAGMENT);
-    init_shader(err, "./shaders/ERROR_VERTEX.glsl", VERTEX);
-    link_shader(err);
-}
-void use_shader(int id){
-    glUseProgram(id);
 }
 
-void set_bool  (int id, char* name, bool value){
-    glUniform1i(glGetUniformLocation(id,name),value);
+///////////////////////////////////////////////////////////////////////////////
+// Free GPU + heap resources.
+///////////////////////////////////////////////////////////////////////////////
+void free_shader(shader_t* shader) {
+    if (shader->shader_ID) glDeleteProgram(shader->shader_ID);
+    free(shader->vertex_source);
+    free(shader->fragment_source);
+
+    shader->shader_ID       = 0;
+    shader->vertex_source   = NULL;
+    shader->fragment_source = NULL;
 }
 
-void set_int   (int id, char* name, int value){
+void use_shader(const shader_t* shader) {
+    glUseProgram(shader->shader_ID);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Uniform setters
+///////////////////////////////////////////////////////////////////////////////
+void set_bool(GLuint id, const char* name, bool value) {
+    glUniform1i(glGetUniformLocation(id, name), (int)value);
+}
+
+void set_int(GLuint id, const char* name, int value) {
     glUniform1i(glGetUniformLocation(id, name), value);
 }
 
-void set_float (int id, char* name, float value){
-    glUniform1f(glGetUniformLocation(id,name),value);
+void set_float(GLuint id, const char* name, float value) {
+    glUniform1f(glGetUniformLocation(id, name), value);
 }
 
-void set_vec3 (int id, char* name, vec3 color){
-    glUniform3f(glGetUniformLocation(id, name),color[0],color[1],color[2]);
+void set_vec3(GLuint id, const char* name, vec3 value) {
+    glUniform3f(glGetUniformLocation(id, name), value[0], value[1], value[2]);
 }
 
-void set_matrix(int id, char* name, mat4 mat){
-    glUniformMatrix4fv(glGetUniformLocation(id, name),1,GL_FALSE,(float *)mat);
+void set_matrix(GLuint id, const char* name, mat4 mat) {
+    glUniformMatrix4fv(glGetUniformLocation(id, name), 1, GL_FALSE, (const float*)mat);
 }
-
-GLchar* get_shader_source(char* filename){
-    GLchar* buffer = NULL;
-    size_t size = 0;
-    FILE *fp = fopen(filename,"rb");
-    if(fp){
-        fseek(fp,0,SEEK_END);
-        size = ftell(fp);
-        rewind(fp);
-        buffer = malloc(( size + 1 ) * sizeof(buffer));
-        fread(buffer,size,1,fp);
-        buffer[size] = '\0';
-        // printf("buffer: %s \n", buffer);
-        return buffer;
-    }
-    printf("something went wrong\n");
-    return NULL;
-}
-

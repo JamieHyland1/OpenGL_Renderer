@@ -2,6 +2,7 @@
 #define object_h
 
 #include <cglm/cglm.h>
+#include <cglm/struct.h>
 #include <stdbool.h>
 
 #include "shader.h"
@@ -13,7 +14,10 @@ typedef struct {
     vec3      position;
     vec3      rotation;
     vec3      scale;
+    mat4     transform;
 } object_t;
+
+extern object_t object;
 
 bool init_object(object_t* obj,
                  const char* model_path,

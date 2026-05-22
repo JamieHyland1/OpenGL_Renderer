@@ -8,19 +8,36 @@
 #include "../include/headers/core.h"
 
 
-static void load_material_textures(mesh_t* mesh, struct aiMaterial* mat, enum aiTextureType type, char* typeName, char* directory){
-    int texture_count = aiGetMaterialTextureCount(mat,type);
+static void load_material_textures(mesh_t* mesh, struct aiMaterial* mat,
+                                   enum aiTextureType type, char* typeName,
+                                   char* directory) {
+    unsigned int texture_count = aiGetMaterialTextureCount(mat, type);
+
+    if (texture_count == 0) {
+        return;  // nothing to load
+    }
+
     mesh->textures = malloc(sizeof(texture_t) * texture_count);
-    for(unsigned int i = 0; i < texture_count; i++){
+    if (!mesh->textures) {
+        fprintf(stderr, "Failed to allocate textures\n");
+        return;
+    }
+    mesh->num_textures = texture_count;   // track the count!
+
+    for (unsigned int i = 0; i < texture_count; i++) {
         struct aiString str;
-        enum aiReturn rtrn = aiGetMaterialTexture(mat,type,i,&str,NULL,NULL,NULL,NULL,NULL,NULL);
-        if(rtrn == aiReturn_SUCCESS){
-            texture_t texture = init_texture(str.data);
+        enum aiReturn rtrn = aiGetMaterialTexture(mat, type, i, &str,
+                                                  NULL, NULL, NULL, NULL, NULL, NULL);
+        if (rtrn == aiReturn_SUCCESS) {
+            // Prepend the model's directory to the texture filename
+            char full_path[1024];
+            snprintf(full_path, sizeof(full_path), "%s%s", directory, str.data);
+
+            texture_t texture = init_texture(full_path);
             texture.type = typeName;
             mesh->textures[i] = texture;
-        }
-        else if(rtrn == aiReturn_FAILURE){
-            printf("error loading texture data\n");
+        } else {
+            fprintf(stderr, "Error loading texture data for %s\n", typeName);
         }
     }
 }
@@ -28,16 +45,16 @@ static void load_material_textures(mesh_t* mesh, struct aiMaterial* mat, enum ai
 
 static mesh_t process_mesh(struct aiMesh* aimesh, const struct aiScene* scene, char* directory){
     mesh_t mesh = {0};
-    int N_VERTS = aimesh->mNumVertices;
+    mesh.num_vertices = aimesh->mNumVertices;
     errno = 0;
-    mesh.vertices = malloc(sizeof(vertex_t) * N_VERTS);
+    mesh.vertices = malloc(sizeof(vertex_t) * mesh.num_vertices);
     if(mesh.vertices == NULL){
         fprintf(stderr, "malloc failed allocating vertices for mesh: %s\n", strerror(errno));
         return mesh;
     }
 
 
-    for(unsigned int i = 0; i < N_VERTS; i++){
+    for(unsigned int i = 0; i < mesh.num_vertices; i++){
 
         vertex_t vertex;
         vertex.Position.x = aimesh->mVertices[i].x;
@@ -91,42 +108,64 @@ static mesh_t process_mesh(struct aiMesh* aimesh, const struct aiScene* scene, c
 }
 
 
-static void process_node(model_t* model, struct aiNode* node, const struct aiScene* scene){
-    int numMeshes = node->mNumMeshes;
-    model->num_meshes += numMeshes;//remember when initializing the model to set this to 0 originally or it might contain garbage
-    errno = 0;
-    model->meshes = malloc(sizeof(mesh_t) * numMeshes);
-    if(model->meshes == NULL){
-        fprintf(stderr, "malloc failed allocating memory for number of meshes: %s\n", strerror(errno));
-        return;
+// Pass 1: count all meshes in the entire node tree
+static unsigned int count_meshes(struct aiNode* node) {
+    unsigned int count = node->mNumMeshes;
+    for (unsigned int i = 0; i < node->mNumChildren; i++) {
+        count += count_meshes(node->mChildren[i]);
     }
-    for(unsigned int i = 0; i < numMeshes; i++){
-        struct aiMesh* aimesh = scene->mMeshes[node->mMeshes[i]]; 
-        mesh_t mesh;
-        mesh = process_mesh(aimesh, scene, model->directory);
-        model->meshes[i] = mesh;
+    return count;
+}
+
+// Pass 2: fill meshes, using a running index passed by pointer
+static void process_node(model_t* model, struct aiNode* node,
+                         const struct aiScene* scene, unsigned int* index) {
+    for (unsigned int i = 0; i < node->mNumMeshes; i++) {
+        struct aiMesh* aimesh = scene->mMeshes[node->mMeshes[i]];
+        model->meshes[*index] = process_mesh(aimesh, scene, model->directory);
+        (*index)++;
     }
-    
-    for(unsigned int i = 0; i < node->mNumChildren; i ++){
-        process_node(model,node->mChildren[i],scene);
+    for (unsigned int i = 0; i < node->mNumChildren; i++) {
+        process_node(model, node->mChildren[i], scene, index);
     }
 }
 
 
-bool load_model(model_t* model, char* path){
-    const struct aiScene* scene = aiImportFile(path, (aiProcess_Triangulate));
-    if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){
+bool load_model(model_t* model, const char* path) {
+    const struct aiScene* scene = aiImportFile(path, aiProcess_Triangulate);
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         printf("ERROR::ASSIMP::%s\n", aiGetErrorString());
         return false;
     }
 
+    // Derive directory
     char* directory = strdup(path);
     char* last_slash = strrchr(directory, '/');
     if (last_slash != NULL) {
         last_slash[1] = '\0';
     }
     model->directory = strdup(directory);
-    process_node(model, scene->mRootNode, scene);
+    free(directory);   // strdup'd twice - free the temp
+
+    // Pass 1: count meshes, allocate the array ONCE
+    model->num_meshes = count_meshes(scene->mRootNode);
+    model->meshes = malloc(sizeof(mesh_t) * model->num_meshes);
+    if (model->meshes == NULL) {
+        fprintf(stderr, "malloc failed for meshes\n");
+        aiReleaseImport(scene);
+        return false;
+    }
+
+    // Pass 2: fill the array
+    unsigned int index = 0;
+    process_node(model, scene->mRootNode, scene, &index);
+
+    // Pass 3: upload each mesh to the GPU
+    for (unsigned int i = 0; i < model->num_meshes; i++) {
+        setup_mesh(&model->meshes[i]);
+    }
+
+    aiReleaseImport(scene);
     return true;
 }
 

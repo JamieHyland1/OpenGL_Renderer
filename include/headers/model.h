@@ -22,7 +22,7 @@ typedef struct{
     size_t num_meshes;
 }model_t;
 
-bool load_model(model_t* model, char* path);
+bool load_model(model_t* model, const char* path);
 void draw_model(model_t* model,shader_t* shader);
 void free_model(model_t* model);
 #endif
