@@ -2,7 +2,6 @@
 renderer
 renderer.exe
 *.o
-*.obj
 *.a
 *.lib
 *.exe
