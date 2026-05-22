@@ -1,7 +1,7 @@
 #ifndef display_h
 #define display_h
 #include <stdbool.h>
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 int setup(void);
 int get_window_width();

@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <C:\SDL2\include\SDL.h>
+#include <SDL2/SDL.h>
 #include "../include/headers/core.h"
 
 ///////////////////////////////////

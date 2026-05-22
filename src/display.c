@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 #include "display.h"
 #include "camera.h"
+#include "stb/stb_image.h"
 #include "display.h"
 #include "camera.h"
 #include <stdio.h>

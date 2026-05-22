@@ -1,8 +1,8 @@
 #ifndef mesh_h
 #define mesh_h
 #include <GL/glew.h>
-#include <SDL.h>
-#include <SDL_opengl.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
 #include <cglm/cglm.h>          
 #include <cglm/struct.h>        
 #include "texture.h"

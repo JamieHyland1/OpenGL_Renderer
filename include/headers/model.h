@@ -2,8 +2,8 @@
 #define model_h
 
 #include "../include/GL/glew.h"
-#include <C:\SDL2\include\SDL.h>
-#include <C:\SDL2\include\SDL_opengl.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
 #include "../include/cglm/cglm.h"
 #include "../include/cglm/struct.h"
 #include "../include/assimp/scene.h"
