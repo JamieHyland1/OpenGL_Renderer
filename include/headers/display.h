@@ -13,7 +13,8 @@ void cancel_renderer();
 bool get_running_status();
 SDL_Window* get_window();
 
-#define FPS 60 
+#define FPS 120
 #define FRAME_TARGET_TIME (1000 / FPS)
 extern mat4 model, view, projection;
+extern float fov; 
 #endif

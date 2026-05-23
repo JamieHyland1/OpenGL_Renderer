@@ -17,6 +17,9 @@ typedef struct {
     mat4     transform;
 } object_t;
 
+#define MAX_NUM_OBJECTS_PER_SCENE 128
+extern int current_num_objects;
+extern object_t objects[MAX_NUM_OBJECTS_PER_SCENE];
 extern object_t object;
 
 bool init_object(object_t* obj,

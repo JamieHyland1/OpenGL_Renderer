@@ -1,6 +1,8 @@
 #include "../include/headers/core.h"
+#include <SDL2/SDL_thread.h>
 
-object_t object = {0};
+object_t objects[MAX_NUM_OBJECTS_PER_SCENE] = {0};
+int current_num_objects = 0;
 
 bool init_object(object_t *obj, const char *model_path, const char *vert_path, const char *frag_path){
   obj->model = malloc(sizeof(model_t));
@@ -26,6 +28,7 @@ bool init_object(object_t *obj, const char *model_path, const char *vert_path, c
     printf("error initializing shaders");
     return false;
   }
+  if(current_num_objects < MAX_NUM_OBJECTS_PER_SCENE)current_num_objects++;else return false;
   return true;
 }
 

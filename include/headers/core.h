@@ -2,6 +2,7 @@
 #define core_h
 
 #include "display.h"
+#include "skybox.h"
 #include "camera.h"
 #include "texture.h"
 #include "material.h"

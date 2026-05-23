@@ -8,6 +8,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "cimgui.h"
+
+#include "cimgui_impl.h"
+
 static bool is_running = false;
 
 static int window_width = 800;
@@ -76,7 +80,14 @@ bool setup(void)
     glewExperimental = GL_TRUE;
     glViewport(0, 0, window_width, window_height); // Set the viewport to the size of the framebuffer
     glewInit();
+    igCreateContext(NULL);   // (NULL) or (NULL, NULL) depending on cimgui version
+    ImGuiIO* io = igGetIO_Nil();
+    io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // ← add this
+    ImGui_ImplSDL2_InitForOpenGL(window, context);
+    ImGui_ImplOpenGL3_Init("#version 330");
+    igStyleColorsDark(NULL);
     glPolygonMode(GL_BACK, GL_FILL);
+
     init_camera(cameraPos, up);
 
 

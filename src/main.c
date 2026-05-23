@@ -10,7 +10,15 @@
 
 // Forward declaration
 bool init_openGL(void);
+const char* faces[6] = {
 
+    "textures/Yokohama/right.jpg",
+    "textures/Yokohama/left.jpg",
+    "textures/Yokohama/top.jpg",
+    "textures/Yokohama/bottom.jpg",
+    "textures/Yokohama/front.jpg",
+    "textures/Yokohama/back.jpg"
+};
 ///////////////////////////////////////////////////////////////////////////////
 // Globals
 ///////////////////////////////////////////////////////////////////////////////
@@ -29,17 +37,20 @@ static float delta_time = 0.0f;
 bool init_openGL(void)
 {
     printf("initialized shaders\n");
-    stbi_set_flip_vertically_on_load(false);
 
-    bool init_obj =  init_object( &object, "Models/Cube/cube.obj",
+    stbi_set_flip_vertically_on_load(true);
+    init_skybox(&skybox, faces, "shaders/skybox_vert.glsl",
+                                 "shaders/skybox_frag.glsl");
+
+    object_t* object = &objects[current_num_objects];
+    bool init_obj =  init_object(object, "Models/Cube/cube.obj",
                   "shaders/obj_vert.glsl",
-                   "shaders/obj_frag.glsl");
+                   "shaders/obj_frag_diffuse.glsl");
 
-
-    glm_vec3_zero(object.position);
-    glm_vec3_zero(object.rotation);
-    glm_vec3_one(object.scale);            // {1,1,1} - critical
-    glm_mat4_identity(object.transform);
+    glm_vec3_zero(object->position);
+    glm_vec3_zero(object->rotation);
+    glm_vec3_one(object->scale);            
+    glm_mat4_identity(object->transform);
 
     return init_obj;
 }
@@ -53,28 +64,25 @@ void update(void)
     if (elapsed_since_last < FRAME_TARGET_TIME) {
         SDL_Delay(FRAME_TARGET_TIME - elapsed_since_last);
     }
+
     Uint32 now = SDL_GetTicks();
     delta_time = (now - previous_frame_time) / 1000.0f;
     elapsed_time += delta_time;
     previous_frame_time = now;
-    printf("camera position: %f, %f, %f\n", camera.position[0], camera.position[1], camera.position[2]);
-    printf("object position: %f, %f, %f\n", object.position[0], object.position[1], object.position[2]);
-    printf("object rotation: %f, %f, %f\n", object.rotation[0], object.rotation[1], object.rotation[2]);
-    // Animate the object
-    object.position[2] = -10.0f;              // push back from camera
-    object.rotation[1] = elapsed_time * 1.5f; // spin on Y
-    glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, camera.position);  // camera at origin
-    // Build the object's transform from its position/rotation/scale
-    glm_mat4_identity(object.transform);
-    glm_translate(object.transform, object.position);
-    glm_rotate_y(object.transform, object.rotation[1], object.transform);
-    glm_scale(object.transform, object.scale);
 
-    glm_mat4_identity(object.transform);
-    glm_translate(object.transform, object.position);
-    glm_rotate_y(object.transform, object.rotation[1], object.transform);
-    glm_scale(object.transform, object.scale);
+    for(int i = 0; i < current_num_objects; i++){
 
+        object_t* object = &objects[i];
+        glm_mat4_identity(object->transform);
+        glm_translate(object->transform, object->position);
+        glm_rotate_y(object->transform, object->rotation[1], object->transform);
+        glm_scale(object->transform, object->scale);
+
+        glm_mat4_identity(object->transform);
+        glm_translate(object->transform, object->position);
+        glm_rotate_y(object->transform, object->rotation[1], object->transform);
+        glm_scale(object->transform, object->scale);
+    }
     // BUILD THE VIEW MATRIX  ← this is what's missing
     glm_lookat(
         camera.position,              // where the camera is

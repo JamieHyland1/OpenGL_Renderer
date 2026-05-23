@@ -1,6 +1,8 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
+#include "cimgui.h"
 
+#include "cimgui_impl.h"
 #include "core.h"
 
 void process_input(void)
@@ -8,6 +10,7 @@ void process_input(void)
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
+        ImGui_ImplSDL2_ProcessEvent(&event);
         switch (event.type)
         {
         case SDL_QUIT:
