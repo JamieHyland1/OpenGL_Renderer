@@ -11,7 +11,6 @@
 // Forward declaration
 bool init_openGL(void);
 const char* faces[6] = {
-
     "textures/Yokohama/right.jpg",
     "textures/Yokohama/left.jpg",
     "textures/Yokohama/top.jpg",
@@ -47,10 +46,22 @@ bool init_openGL(void)
                   "shaders/obj_vert.glsl",
                    "shaders/obj_frag_diffuse.glsl");
 
+
+    object_t* object2 = &objects[current_num_objects];
+    init_obj = init_obj &&  init_object(object2, "Models/Skull/skull.obj",
+                  "shaders/obj_vert.glsl",
+                   "shaders/obj_frag_diffuse.glsl");
+
     glm_vec3_zero(object->position);
     glm_vec3_zero(object->rotation);
     glm_vec3_one(object->scale);            
     glm_mat4_identity(object->transform);
+
+
+    glm_vec3_one(object2->position);
+    glm_vec3_zero(object2->rotation);
+    glm_vec3_one(object2->scale);            
+    glm_mat4_identity(object2->transform);
 
     return init_obj;
 }
@@ -75,12 +86,7 @@ void update(void)
         object_t* object = &objects[i];
         glm_mat4_identity(object->transform);
         glm_translate(object->transform, object->position);
-        glm_rotate_y(object->transform, object->rotation[1], object->transform);
-        glm_scale(object->transform, object->scale);
-
-        glm_mat4_identity(object->transform);
-        glm_translate(object->transform, object->position);
-        glm_rotate_y(object->transform, object->rotation[1], object->transform);
+        glm_rotate_x(object->transform, object->rotation[1], object->transform);
         glm_scale(object->transform, object->scale);
     }
     // BUILD THE VIEW MATRIX  ← this is what's missing
