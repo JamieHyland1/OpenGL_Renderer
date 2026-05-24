@@ -37,12 +37,14 @@ void process_input(void)
 
 
         case SDL_MOUSEBUTTONUP:
+        {
           if (event.button.button == SDL_BUTTON_RIGHT) {
+
                 set_camera_viewport_hovered(false);
                 SDL_SetRelativeMouseMode(SDL_FALSE);
             }
             break;
-
+        }
         case SDL_MOUSEMOTION:
             if(get_is_camera_viewport_hovered()){
                 process_mouse_move((float)-event.motion.xrel,(float)-event.motion.yrel, delta_time);

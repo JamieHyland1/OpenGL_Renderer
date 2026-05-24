@@ -20,5 +20,7 @@ extern mat4 model, view, projection;
 extern float fov; 
 extern float aspect_ratio;
 extern float delta_time;
-
+extern GLuint framebuffer;
+extern GLuint textureColorbuffer;
+extern GLuint rbo;
 #endif

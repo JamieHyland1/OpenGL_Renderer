@@ -26,16 +26,16 @@ float aspect_ratio = 0.0f;
 vec3 cameraPos = {0.0f, 1.0f, 5.0f};
 vec3 up = {0.0f, 1.0f, 0.0f};
 float delta_time = 0.0f;
-
+GLuint framebuffer = 0;
+GLuint textureColorbuffer = 0;
+GLuint rbo = 0;
 ///////////////////////////////////////////////////////////////////////////////
 // Setup function to initialize variables and game objects
 ///////////////////////////////////////////////////////////////////////////////
 
-bool setup(void)
-{
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
-    {
-        fprintf(stderr, "Error initializing SDL window");
+bool setup(void) {
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+        fprintf(stderr, "Error initializing SDL: %s\n", SDL_GetError());
         return false;
     }
 
@@ -45,59 +45,65 @@ bool setup(void)
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-    SDL_DisplayMode displayMode;
-    SDL_GetCurrentDisplayMode(0, &displayMode);
-    printf("window width: %d window height: %d\n", window_width, window_height);
-    stbi_set_flip_vertically_on_load(true);
-
     window = SDL_CreateWindow(
         "The window into Jamie's madness",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        window_width,
-        window_height,
-        SDL_WINDOW_OPENGL| SDL_WINDOW_RESIZABLE );
-    if (!window)
-    {
-        fprintf(stderr, "Error creating SDL window");
-        return false;
-    }
-    renderer = SDL_CreateRenderer(window, -1, 0);
-
-    if (!renderer)
-    {
-        fprintf(stderr, "Error creating SDL renderer");
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        window_width, window_height,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    if (!window) {
+        fprintf(stderr, "Error creating window: %s\n", SDL_GetError());
         return false;
     }
 
-    SDL_SetWindowBordered(window, SDL_WINDOWPOS_CENTERED);
-
-    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5);
-    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 5);
-    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 5);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     context = SDL_GL_CreateContext(window);
+    if (!context) {
+        fprintf(stderr, "Error creating GL context: %s\n", SDL_GetError());
+        return false;
+    }
     SDL_GL_MakeCurrent(window, context);
+
     glewExperimental = GL_TRUE;
-    glViewport(0, 0, window_width, window_height); // Set the viewport to the size of the framebuffer
-    glewInit();
-    igCreateContext(NULL);   // (NULL) or (NULL, NULL) depending on cimgui version
+    if (glewInit() != GLEW_OK) {
+        fprintf(stderr, "GLEW init failed\n");
+        return false;
+    }
+    glViewport(0, 0, window_width, window_height);
+
+    igCreateContext(NULL);
     ImGuiIO* io = igGetIO_Nil();
-    io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // ← add this
+    io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     ImGui_ImplSDL2_InitForOpenGL(window, context);
     ImGui_ImplOpenGL3_Init("#version 330");
     igStyleColorsDark(NULL);
-    glPolygonMode(GL_BACK, GL_FILL);
 
     init_camera(cameraPos, up);
-    int x = 0;
-    int y = 0;
-    SDL_GetWindowSize(window,&x,&y);
-    printf("window size: x:%d, y:%d\n", x, y);
+
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);   // BIND first
+
+    glGenTextures(1, &textureColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, textureColorbuffer, 0);
+
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,
+                          window_width, window_height);   // consistent size
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                              GL_RENDERBUFFER, rbo);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        fprintf(stderr, "ERROR: Framebuffer incomplete!\n");
+        return false;
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);   // back to default
 
     return true;
-
 }
 
 int get_window_width(){
