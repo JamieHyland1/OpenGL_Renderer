@@ -5,6 +5,10 @@
 #include "cimgui_impl.h"
 #include "core.h"
 
+
+static SDL_MouseMotionEvent mouse_event;
+
+
 void process_input(void)
 {
     SDL_Event event;
@@ -21,18 +25,28 @@ void process_input(void)
             if (event.key.keysym.sym == SDLK_ESCAPE) {
               cancel_renderer();
             }
-            process_keyboard_movement(event, 1);
             break;
 
         case SDL_MOUSEBUTTONDOWN:
-            break;
+        {
+            if (event.button.button == SDL_BUTTON_RIGHT) {
+                set_camera_viewport_hovered(true);
+                SDL_SetRelativeMouseMode(SDL_TRUE);
+            }
+        } break;
+
 
         case SDL_MOUSEBUTTONUP:
+          if (event.button.button == SDL_BUTTON_RIGHT) {
+                set_camera_viewport_hovered(false);
+                SDL_SetRelativeMouseMode(SDL_FALSE);
+            }
             break;
 
         case SDL_MOUSEMOTION:
-            /* process_mouse_move((float)event.motion.xrel,
-                                  (float)event.motion.yrel, 1); */
+            if(get_is_camera_viewport_hovered()){
+                process_mouse_move((float)-event.motion.xrel,(float)-event.motion.yrel, delta_time);
+            }
             break;
 
         case SDL_MOUSEWHEEL:

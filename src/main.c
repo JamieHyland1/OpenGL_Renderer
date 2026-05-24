@@ -24,12 +24,10 @@ const char* faces[6] = {
 float elapsed_time = 0.0f;
 float fov = 45.0f;
 float p_angle = 45.0f;
-float aspect_ratio = 0.0f;
 mat4 model, view, projection;
 
 bool is_running = false;
 int  previous_frame_time = 0;
-static float delta_time = 0.0f;
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize OpenGL state and load any startup resources
 ///////////////////////////////////////////////////////////////////////////////
@@ -52,6 +50,13 @@ bool init_openGL(void)
                   "shaders/obj_vert.glsl",
                    "shaders/obj_frag_diffuse.glsl");
 
+    object_t* object3 = &objects[current_num_objects];
+    init_obj = init_obj &&  init_object(object3, "Models/Crashune/Love_chan_low_poly_test.obj",
+                  "shaders/obj_vert.glsl",
+                   "shaders/obj_frag_diffuse.glsl");
+
+    
+
     glm_vec3_zero(object->position);
     glm_vec3_zero(object->rotation);
     glm_vec3_one(object->scale);            
@@ -62,6 +67,11 @@ bool init_openGL(void)
     glm_vec3_zero(object2->rotation);
     glm_vec3_one(object2->scale);            
     glm_mat4_identity(object2->transform);
+
+    glm_vec3_one(object3->position);
+    glm_vec3_zero(object3->rotation);
+    glm_vec3_one(object3->scale);
+    glm_mat4_identity(object3->transform);
 
     return init_obj;
 }
@@ -75,30 +85,31 @@ void update(void)
     if (elapsed_since_last < FRAME_TARGET_TIME) {
         SDL_Delay(FRAME_TARGET_TIME - elapsed_since_last);
     }
-
+    check_window_resize();
     Uint32 now = SDL_GetTicks();
     delta_time = (now - previous_frame_time) / 1000.0f;
     elapsed_time += delta_time;
     previous_frame_time = now;
 
-    for(int i = 0; i < current_num_objects; i++){
-
+    for (int i = 0; i < current_num_objects; i++) {
         object_t* object = &objects[i];
+
         glm_mat4_identity(object->transform);
+
         glm_translate(object->transform, object->position);
-        glm_rotate_x(object->transform, object->rotation[1], object->transform);
+
+        glm_rotate_x(object->transform, object->rotation[0], object->transform);
+        glm_rotate_y(object->transform, object->rotation[1], object->transform);
+        glm_rotate_z(object->transform, object->rotation[2], object->transform);
+
         glm_scale(object->transform, object->scale);
     }
-    // BUILD THE VIEW MATRIX  ← this is what's missing
-    glm_lookat(
-        camera.position,              // where the camera is
-        (vec3){0.0f, 0.0f, -10.0f},   // look at the cube
-        (vec3){0.0f, 1.0f, 0.0f},     // up vector
-        view
-    );
 
+    update_camera_movement(delta_time);
+    camera_look_at(view);
     aspect_ratio = (float)get_window_width() / (float)get_window_height();
-    glm_perspective(glm_rad(fov), aspect_ratio, 0.1f, 100.0f, projection);
+    glm_perspective(glm_rad(fov), aspect_ratio, 0.1f, 1000.0f, projection);
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -1,33 +1,32 @@
 #include "../include/GL/glew.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
-#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "../include/headers/core.h"
-
-
-///////////////////////////////////
-// This class handles camera movement
-// I will probably rewrite this file at 
-// some point, I dont particularly like 
-// cglm and how is uses arrays for its properties instead of structs
-// but for now it will do >:(
-///////////////////////////////////
-
+#include "cimgui.h"
+#include "cimgui_impl.h"
 
 camera_t camera = {
-    .position = {0,0,3.0},
-    .direction = {0,0,1.0f},
-    .cam_vel = {0.0f,0.0f,0.0f},
-    .right = {1.0,0.0,0.0},
-    .worldUp = {0.0,1.0,0.0},
-    .pitch = 0.0,
-    .yaw = -90.0,
-    .roll = 0.0
+    .position = {0.0f, 0.0f, 3.0f},
+    .direction = {0.0f, 0.0f, -1.0f},
+    .cam_vel = {0.0f, 0.0f, 0.0f},
+    .right = {1.0f, 0.0f, 0.0f},
+    .worldUp = {0.0f, 1.0f, 0.0f},
+    .up = {0.0f, 1.0f, 0.0f},
+    .pitch = 0.0f,
+    .yaw = -90.0f,
+    .roll = 0.0f
 };
 
-float camSpeed = 2.0f;
+
+
+float camSpeed = 12.0f;
+static bool camera_is_rotating = false;
+static bool camera_viewport_hovered = false;
+static float mouse_sensitivity = 0.1f;
+
+
 void init_camera(vec3 position, vec3 w_up){
     //set the camera position and world up vector
     glm_vec3_copy(position,camera.position);
@@ -42,51 +41,58 @@ void init_camera(vec3 position, vec3 w_up){
     updateCameraVectors(1);
 
 }
-void process_mouse_move(float xPos, float yPos,float delta_time){
-    float sensitivity = 0.1f;
 
-    camera.yaw += (float)-xPos * sensitivity * delta_time;
-    camera.pitch += (float)yPos * sensitivity * delta_time;
-    
-    if(camera.pitch > 89.0f)
+void process_mouse_move(float xrel, float yrel, float delta_time) {
+    (void)delta_time;
+
+    camera.yaw += xrel * mouse_sensitivity;
+    camera.pitch -= yrel * mouse_sensitivity;
+
+    if (camera.pitch > 89.0f) {
         camera.pitch = 89.0f;
-    if(camera.pitch < -89.0f)
-        camera.pitch = -89.0f;
-        
-    updateCameraVectors(delta_time);
-}
-void process_keyboard_movement(SDL_Event event, float delta_time){
-    if(event.key.keysym.sym == SDLK_w){
-        glm_vec3_scale(&camera.direction[0],camSpeed*delta_time,&camera.cam_vel[0]);
-        glm_vec3_add(&camera.position[0],&camera.cam_vel[0],&camera.position[0]);
-        camera.position[1] = 1;
     }
-    else if(event.key.keysym.sym == SDLK_s){
-        glm_vec3_scale(&camera.direction[0],camSpeed*delta_time,&camera.cam_vel[0]);
-        glm_vec3_sub(&camera.position[0],&camera.cam_vel[0],&camera.position[0]);
-        camera.position[1] = 1;
-    }
-    else if(event.key.keysym.sym == SDLK_a){
-        glm_vec3_cross(&camera.direction[0],&camera.up[0],&camera.cam_vel[0]);
-        glm_vec3_normalize(&camera.cam_vel[0]);
-        glm_vec3_scale(&camera.cam_vel[0],camSpeed*delta_time,&camera.cam_vel[0]);
-        glm_vec3_sub(&camera.position[0],&camera.cam_vel[0],&camera.position[0]);
-        camera.position[1] = 1;
-    }
-    else if(event.key.keysym.sym == SDLK_d){
-        glm_vec3_cross(&camera.direction[0],&camera.up[0],&camera.cam_vel[0]);
-        glm_vec3_normalize(&camera.cam_vel[0]);
-        glm_vec3_scale(&camera.cam_vel[0],camSpeed*delta_time,&camera.cam_vel[0]);
-        glm_vec3_add(&camera.position[0],&camera.cam_vel[0],&camera.position[0]);
-        camera.position[1] = 1;
-    }
-    updateCameraVectors(delta_time);
 
+    if (camera.pitch < -89.0f) {
+        camera.pitch = -89.0f;
+    }
+
+    updateCameraVectors(delta_time);
 }
-void camera_look_at(mat4* view){
-    vec3 t = {0.0,0.0,0.0};
-    glm_vec3_add(&camera.position[0],&camera.direction[0],&t[0]);
-    glm_lookat_rh_no(&camera.position[0],&t[0],&camera.up[0], view[0]);
+
+void update_camera_movement(float delta_time) {
+    if (igGetIO_Nil()->WantCaptureKeyboard) return;
+
+    const Uint8* keys = SDL_GetKeyboardState(NULL);
+    float speed = camSpeed * delta_time;
+    vec3 move;
+
+    if (keys[SDL_SCANCODE_W]) {
+        glm_vec3_scale(camera.direction, speed, move);
+        glm_vec3_add(camera.position, move, camera.position);
+    }
+    if (keys[SDL_SCANCODE_S]) {
+        glm_vec3_scale(camera.direction, speed, move);
+        glm_vec3_sub(camera.position, move, camera.position);
+    }
+    if (keys[SDL_SCANCODE_A]) {
+        glm_vec3_cross(camera.direction, camera.up, move);
+        glm_vec3_normalize(move);
+        glm_vec3_scale(move, speed, move);
+        glm_vec3_sub(camera.position, move, camera.position);
+    }
+    if (keys[SDL_SCANCODE_D]) {
+        glm_vec3_cross(camera.direction, camera.up, move);
+        glm_vec3_normalize(move);
+        glm_vec3_scale(move, speed, move);
+        glm_vec3_add(camera.position, move, camera.position);
+    }
+
+    updateCameraVectors(delta_time);
+}
+void camera_look_at(mat4 view) {
+    vec3 t;
+    glm_vec3_add(camera.position, camera.direction, t);          
+    glm_lookat_rh_no(camera.position, t, camera.up, view);
 }
 void updateCameraVectors(float delta_time){
     // calculate the new Front vector
@@ -120,7 +126,6 @@ void get_camera_position(vec3* vec){
 void get_camera_direction(vec3* vec){
     glm_vec3_copy(&camera.direction[0],vec[0]);
 }
-
 void rotate_around_point(vec3 target, float radius, float angle, mat4* view) {
     // Calculate the new camera position on the circular path
     camera.position[0] = target[0] + radius * cosf(angle);
@@ -141,4 +146,20 @@ void rotate_around_point(vec3 target, float radius, float angle, mat4* view) {
 
     // Update the view matrix
     glm_lookat_rh_no(camera.position, target, camera.up, view[0]);
+}
+
+void set_camera_rotating(bool rotating){
+    camera_is_rotating = rotating;
+}
+
+bool get_is_camera_rotating(){
+    return camera_is_rotating;
+}
+
+void set_camera_viewport_hovered(bool hovered){
+    camera_viewport_hovered = hovered;
+}
+
+bool get_is_camera_viewport_hovered(){
+    return camera_viewport_hovered;
 }

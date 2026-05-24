@@ -21,9 +21,11 @@ static SDL_Window *window = NULL;
 SDL_GLContext context = NULL;
 
 static SDL_Renderer *renderer = NULL;
+float aspect_ratio = 0.0f;
 
 vec3 cameraPos = {0.0f, 1.0f, 5.0f};
 vec3 up = {0.0f, 1.0f, 0.0f};
+float delta_time = 0.0f;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Setup function to initialize variables and game objects
@@ -54,7 +56,7 @@ bool setup(void)
         SDL_WINDOWPOS_CENTERED,
         window_width,
         window_height,
-        SDL_WINDOW_OPENGL);
+        SDL_WINDOW_OPENGL| SDL_WINDOW_RESIZABLE );
     if (!window)
     {
         fprintf(stderr, "Error creating SDL window");
@@ -89,10 +91,13 @@ bool setup(void)
     glPolygonMode(GL_BACK, GL_FILL);
 
     init_camera(cameraPos, up);
-
-
+    int x = 0;
+    int y = 0;
+    SDL_GetWindowSize(window,&x,&y);
+    printf("window size: x:%d, y:%d\n", x, y);
 
     return true;
+
 }
 
 int get_window_width(){
@@ -103,6 +108,19 @@ int get_window_height(){
   return window_height;
 }
 
+static void resize_screen(int width, int height) {
+    if (height == 0) {
+        height = 1;
+    }
+
+    window_width  = width;
+    window_height = height;
+    glViewport(0, 0, width, height);
+
+    float aspect = (float)width / (float)height;
+    glm_perspective(glm_rad(fov), aspect_ratio, 0.1f, 1000.0f, projection);
+
+}
 void set_running_status(bool status){
     is_running =  status;
 }
@@ -117,4 +135,17 @@ bool get_running_status(){
 
 SDL_Window* get_window(){
     return window;
+}
+
+void check_window_resize(void) {
+    SDL_Window* window = get_window();
+
+    int w = 0;
+    int h = 0;
+
+    SDL_GL_GetDrawableSize(window, &w, &h);
+
+    if (w != get_window_width() || h != get_window_height()) {
+        resize_screen(w, h);
+    }
 }
