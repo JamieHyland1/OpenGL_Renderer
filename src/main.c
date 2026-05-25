@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-
+#include "../include/headers/framebuffer.h"
 #include "core.h"
 #include "stb/stb_image.h"
 
@@ -51,7 +51,7 @@ bool init_openGL(void)
                    "shaders/obj_frag_diffuse.glsl");
 
     object_t* object3 = &objects[current_num_objects];
-    init_obj = init_obj &&  init_object(object3, "Models/Crashune/Love_chan_low_poly_test.obj",
+    init_obj = init_obj &&  init_object(object3, "Models/Dragon/Dragon.obj",
                   "shaders/obj_vert.glsl",
                    "shaders/obj_frag_diffuse.glsl");
 
@@ -107,7 +107,8 @@ void update(void)
 
     update_camera_movement(delta_time);
     camera_look_at(view);
-    aspect_ratio = (float)get_window_width() / (float)get_window_height();
+    aspect_ratio = (float)fb.width / (float)fb.height;
+    printf("aspect ratio: %f\n", aspect_ratio);
     glm_perspective(glm_rad(fov), aspect_ratio, 0.1f, 1000.0f, projection);
 
 }

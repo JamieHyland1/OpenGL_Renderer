@@ -74,7 +74,7 @@ bool setup(void) {
     igStyleColorsDark(NULL);
 
     init_camera(cameraPos, up);
-    if (!init_framebuffer(&fb, get_window_width(), get_window_height())) {
+    if (!init_framebuffer(&fb, 1920, 1080)) {
         fprintf(stderr, "Failed to create scene framebuffer\n");
         return false;
     }

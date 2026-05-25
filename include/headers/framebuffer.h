@@ -18,7 +18,7 @@ typedef struct{
 extern framebuffer_t fb;
 
 bool init_framebuffer(framebuffer_t* fb, int width, int height);
-void resise_framebuffer(framebuffer_t* fb, int width, int height);
+void resize_framebuffer(framebuffer_t* fb, int width, int height);
 void bind_framebuffer(framebuffer_t* fb);
 void unbind_framebuffer(framebuffer_t* fb);
 void free_framebuffer(framebuffer_t* fb);

@@ -39,24 +39,24 @@ bool init_framebuffer(framebuffer_t *fb, int width, int height){
     return true;
 }
 
+#include <stdlib.h>   // for abs
+
 void resize_framebuffer(framebuffer_t *fb, int width, int height){
-    if (width == fb->width && height == fb->height) return;  
-    if (width <= 0 || height <= 0) return;                   
+    if (width <= 0 || height <= 0) return;
+    if (abs(width - fb->width) < 2 && abs(height - fb->height) < 2) return;  // ignore <2px wobble
 
     fb->width  = width;
     fb->height = height;
 
-    // Reallocate the color texture at the new size
     glBindTexture(GL_TEXTURE_2D, fb->texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
                  GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
-    // Reallocate the depth/stencil renderbuffer at the new size
     glBindRenderbuffer(GL_RENDERBUFFER, fb->rbo);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
 }
-
 void bind_framebuffer(framebuffer_t *fb){
+
     glBindFramebuffer(GL_FRAMEBUFFER, fb->fbo);   
     glViewport(0, 0, fb->width, fb->height);   
     
