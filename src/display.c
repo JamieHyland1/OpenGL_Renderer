@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-
+#include "../include/headers/framebuffer.h"
 #include "cimgui.h"
 
 #include "cimgui_impl.h"
@@ -26,9 +26,6 @@ float aspect_ratio = 0.0f;
 vec3 cameraPos = {0.0f, 1.0f, 5.0f};
 vec3 up = {0.0f, 1.0f, 0.0f};
 float delta_time = 0.0f;
-GLuint framebuffer = 0;
-GLuint textureColorbuffer = 0;
-GLuint rbo = 0;
 ///////////////////////////////////////////////////////////////////////////////
 // Setup function to initialize variables and game objects
 ///////////////////////////////////////////////////////////////////////////////
@@ -77,31 +74,10 @@ bool setup(void) {
     igStyleColorsDark(NULL);
 
     init_camera(cameraPos, up);
-
-    glGenFramebuffers(1, &framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);   // BIND first
-
-    glGenTextures(1, &textureColorbuffer);
-    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0,
-                 GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                           GL_TEXTURE_2D, textureColorbuffer, 0);
-
-    glGenRenderbuffers(1, &rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,
-                          window_width, window_height);   // consistent size
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
-                              GL_RENDERBUFFER, rbo);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        fprintf(stderr, "ERROR: Framebuffer incomplete!\n");
+    if (!init_framebuffer(&fb, get_window_width(), get_window_height())) {
+        fprintf(stderr, "Failed to create scene framebuffer\n");
         return false;
     }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);   // back to default
 
     return true;
 }

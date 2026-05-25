@@ -6,6 +6,7 @@
 #include "cimgui_impl.h"
 #include <cglm/cglm.h>
 #include <cglm/struct.h>
+#include "../include/headers/framebuffer.h"
 static int selected_object = -1;
 ///////////////////////////////////////////////////////////////////////////////
 // Render scene UI
@@ -26,7 +27,7 @@ static void render_ui(void) {
     {
         ImVec2_c avail = igGetContentRegionAvail();
 
-        ImTextureRef_c tex_ref = { ._TexID = (ImTextureID)textureColorbuffer };
+        ImTextureRef_c tex_ref = { ._TexID = (ImTextureID)fb.texture};
 
         igImage(
             tex_ref,
@@ -57,23 +58,26 @@ static void render_objects(){
 // Render scene - thin orchestrator for UI and Scene Objects
 ///////////////////////////////////////////////////////////////////////////////
 void render(void) {
-    // ---- PASS 1: render scene into the FBO (for the ImGui window) ----
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    glViewport(0, 0, get_window_width(), get_window_height());
+    printf("fbo: %d\n", fb.fbo);
+    printf("texture: %d\n", fb.texture);
+    printf("rbo: %d\n", fb.rbo);
+    printf("width: %d\n", fb.width);
+    printf("height: %d\n", fb.height);
+    // ---- PASS 1: scene into the FBO (for the ImGui Scene panel) ----
+    bind_framebuffer(&fb);
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(1.0f, 0.0f, 1.0f, 1.0f);   // magenta
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    render_objects();
+    unbind_framebuffer(&fb);
+
+    // ---- PASS 2: scene to the screen (temporary - delete once panel works) ----
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.243f, 0.243f, 0.69f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     render_objects();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);   // back to default (screen)
 
-    // ---- PASS 2: render scene normally to the screen (your current path) ----
-    glViewport(0, 0, get_window_width(), get_window_height());
-    glEnable(GL_DEPTH_TEST);
-    glClearColor(0.243f, 0.243f, 0.69f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    render_objects();
-
-    // ---- UI (includes a window showing the FBO texture) ----
+    // ---- UI ----
     render_ui();
 
     SDL_GL_SwapWindow(get_window());
