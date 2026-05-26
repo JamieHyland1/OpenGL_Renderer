@@ -5,8 +5,8 @@
 #include <ctype.h>
 #include <SDL2/SDL.h>
 #include "string.h"
-#include "../include/headers/core.h"
-
+#include "../include/stb/stb_image.h"
+#include "../include/headers/texture.h"
 
 ///////////////////////////////////
 // This class handles textures

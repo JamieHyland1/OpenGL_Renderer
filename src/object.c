@@ -1,5 +1,6 @@
-#include "../include/headers/core.h"
 #include <SDL2/SDL_thread.h>
+#include "../include/headers/object.h"
+#include "../include/headers/display.h"
 
 object_t objects[MAX_NUM_OBJECTS_PER_SCENE] = {0};
 int current_num_objects = 0;

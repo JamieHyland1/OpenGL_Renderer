@@ -1,6 +1,6 @@
+/* Test file with all the main header files, can be used for texting but should be swapped out */
 #ifndef core_h
 #define core_h
-
 #include "display.h"
 #include "skybox.h"
 #include "camera.h"
@@ -13,5 +13,6 @@
 #include "object.h"
 #include "input.h"
 #include "render.h"
-
+#include "framebuffer.h"
+#include "vertex.h"
 #endif

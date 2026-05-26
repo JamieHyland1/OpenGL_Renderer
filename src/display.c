@@ -7,10 +7,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "../include/headers/framebuffer.h"
 #include "cimgui.h"
-
 #include "cimgui_impl.h"
+#include "../include/headers/framebuffer.h"
+
 
 static bool is_running = false;
 

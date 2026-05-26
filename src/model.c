@@ -5,8 +5,8 @@
 #include "../include/assimp/postprocess.h"
 #include "../include/assimp/material.h"
 #include "../include/headers/stb_image.h"
-#include "../include/headers/core.h"
-
+#include "../include/headers/model.h"
+#include "../include/headers/texture.h"
 
 static void load_material_textures(mesh_t* mesh, struct aiMaterial* mat,
                                    enum aiTextureType type, char* typeName,

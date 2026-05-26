@@ -4,8 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "../include/headers/core.h"
-
+#include "../include/headers/material.h"
 
 void set_material_ambient(material_t* mat,  vec3 ambient){
     glm_vec3_copy(&ambient[0],&mat->ambient[0]);

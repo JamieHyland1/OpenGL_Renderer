@@ -1,8 +1,8 @@
 #include <SDL2/SDL.h>
 #include "../include/headers/framebuffer.h"
 #include "../include/headers/display.h"
-framebuffer_t fb = {0};
 
+framebuffer_t fb = {0};
 
 bool init_framebuffer(framebuffer_t *fb, int width, int height){
 

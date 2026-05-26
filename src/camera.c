@@ -3,9 +3,9 @@
 #include <SDL2/SDL_opengl.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "../include/headers/core.h"
 #include "cimgui.h"
 #include "cimgui_impl.h"
+#include "../include/headers/camera.h"
 
 camera_t camera = {
     .position = {0.0f, 0.0f, 3.0f},

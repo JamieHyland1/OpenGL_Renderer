@@ -4,9 +4,14 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "../include/headers/framebuffer.h"
-#include "core.h"
 #include "stb/stb_image.h"
+#include "../include/headers/framebuffer.h"
+#include "../include/headers/skybox.h"
+#include "../include/headers/render.h"
+#include "../include/headers/object.h"
+#include "../include/headers/display.h"
+#include "../include/headers/input.h"
+#include "../include/headers/camera.h"
 
 // Forward declaration
 bool init_openGL(void);
@@ -108,7 +113,6 @@ void update(void)
     update_camera_movement(delta_time);
     camera_look_at(view);
     aspect_ratio = (float)fb.width / (float)fb.height;
-    printf("aspect ratio: %f\n", aspect_ratio);
     glm_perspective(glm_rad(fov), aspect_ratio, 0.1f, 1000.0f, projection);
 
 }
