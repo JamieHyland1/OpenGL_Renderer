@@ -44,21 +44,21 @@ bool init_openGL(void)
     init_skybox(&skybox, faces, "shaders/skybox_vert.glsl",
                                  "shaders/skybox_frag.glsl");
 
-    object_t* object = &objects[current_num_objects];
+     object_t* object = &objects[current_num_objects];
     bool init_obj =  init_object(object, "Models/Cube/cube.obj",
                   "shaders/obj_vert.glsl",
-                   "shaders/obj_frag_diffuse.glsl");
+                   "shaders/obj_frag_diffuse.glsl"); 
 
 
-    object_t* object2 = &objects[current_num_objects];
+    /* object_t* object2 = &objects[current_num_objects];
     init_obj = init_obj &&  init_object(object2, "Models/Skull/skull.obj",
                   "shaders/obj_vert.glsl",
-                   "shaders/obj_frag_diffuse.glsl");
+                   "shaders/obj_frag_diffuse.glsl");  */
 
     object_t* object3 = &objects[current_num_objects];
     init_obj = init_obj &&  init_object(object3, "Models/Dragon/Dragon.obj",
-                  "shaders/obj_vert.glsl",
-                   "shaders/obj_frag_diffuse.glsl");
+                  "shaders/mirror_vertex.glsl",
+                   "shaders/mirror_frag.glsl");
 
     
 
@@ -68,10 +68,10 @@ bool init_openGL(void)
     glm_mat4_identity(object->transform);
 
 
-    glm_vec3_one(object2->position);
+    /* glm_vec3_one(object2->position);
     glm_vec3_zero(object2->rotation);
     glm_vec3_one(object2->scale);            
-    glm_mat4_identity(object2->transform);
+    glm_mat4_identity(object2->transform); */
 
     glm_vec3_one(object3->position);
     glm_vec3_zero(object3->rotation);

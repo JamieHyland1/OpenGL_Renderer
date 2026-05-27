@@ -132,7 +132,11 @@ static void process_node(model_t* model, struct aiNode* node,
 
 
 bool load_model(model_t* model, const char* path) {
-    const struct aiScene* scene = aiImportFile(path, aiProcess_Triangulate);
+    const struct aiScene* scene = aiImportFile(path,
+        aiProcess_Triangulate |
+        aiProcess_GenSmoothNormals |    // Force smooth normals
+        aiProcess_JoinIdenticalVertices  // Merge duplicate vertices
+    );
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         printf("ERROR::ASSIMP::%s\n", aiGetErrorString());
         return false;

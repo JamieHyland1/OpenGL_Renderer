@@ -24,12 +24,13 @@ texture_t init_texture(const char* filename){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+    stbi_set_flip_vertically_on_load(true);
 
 
     unsigned char *data = stbi_load(filename,&texture.width,&texture.height,&texture.nrChannels,0);
     if(data && strstr(filename,".png") != NULL){
         glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA, texture.width,texture.height,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
-        //glGenerateMipmap(GL_TEXTURE_2D);
+        glGenerateMipmap(GL_TEXTURE_2D);
     }else if(data){
         glTexImage2D(GL_TEXTURE_2D,0, GL_RGB, texture.width,texture.height,0,GL_RGB,GL_UNSIGNED_BYTE,data);
     }else{
