@@ -90,3 +90,9 @@ I chose a very nice cubemap of the city of Yokohama at night :D Then following [
 ![A_night_in_yokohama](https://github.com/user-attachments/assets/f274f92c-141e-44cf-bd22-fecf8adf9ee2)
 
 Really happy with how this turned out! Its funny how something so simple can look so nice! The reception to it was also quite good! Very encouraging!
+
+# I'm back! [27/05/2026]
+
+Kept you waiting huh? The gap between updates has been long, basically I wanted to add cimgui to this project and found it MEGA DIFFICULT to get working, and to be honest it just demotivated me completely. I then started working on a dreamcast renderer and well, time happened. but Im back!]
+![A dragon in Yokohama](https://github.com/user-attachments/assets/eea55562-0a5c-490f-b77c-d1e740ad7b3a)
+As you can see from the image I got CIMGUI working! so now I can continue, I hope to include more and more things now that I've cleaned the code up a bit and got some stuff viewing on the screen again. I think my next task will be to add a post proccessing step to the renderer so I can change the scene view on the fly!
