@@ -44,10 +44,10 @@ bool init_openGL(void)
     init_skybox(&skybox, faces, "shaders/skybox_vert.glsl",
                                  "shaders/skybox_frag.glsl");
 
-     object_t* object = &objects[current_num_objects];
+     /* object_t* object = &objects[current_num_objects];
     bool init_obj =  init_object(object, "Models/Cube/cube.obj",
                   "shaders/obj_vert.glsl",
-                   "shaders/obj_frag_diffuse.glsl"); 
+                   "shaders/obj_frag_diffuse.glsl"); */ 
 
 
     /* object_t* object2 = &objects[current_num_objects];
@@ -56,16 +56,16 @@ bool init_openGL(void)
                    "shaders/obj_frag_diffuse.glsl");  */
 
     object_t* object3 = &objects[current_num_objects];
-    init_obj = init_obj &&  init_object(object3, "Models/Dragon/Dragon.obj",
+    bool init_obj = init_object(object3, "Models/Dragon/Dragon.obj",
                   "shaders/mirror_vertex.glsl",
                    "shaders/mirror_frag.glsl");
 
     
 
-    glm_vec3_zero(object->position);
+    /* glm_vec3_zero(object->position);
     glm_vec3_zero(object->rotation);
     glm_vec3_one(object->scale);            
-    glm_mat4_identity(object->transform);
+    glm_mat4_identity(object->transform); */
 
 
     /* glm_vec3_one(object2->position);
@@ -104,7 +104,7 @@ void update(void)
         glm_translate(object->transform, object->position);
 
         glm_rotate_x(object->transform, object->rotation[0], object->transform);
-        glm_rotate_y(object->transform, object->rotation[1], object->transform);
+        glm_rotate_y(object->transform, object->rotation[1] += 0.01, object->transform);
         glm_rotate_z(object->transform, object->rotation[2], object->transform);
 
         glm_scale(object->transform, object->scale);
