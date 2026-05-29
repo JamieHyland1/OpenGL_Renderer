@@ -1,8 +1,6 @@
 #ifndef light_h
 #define light_h
 #include <stdbool.h>
-#include <SDL2/SDL.h>
-#include <GL/glew.h>
 #include <cglm/cglm.h>
 #include <cglm/struct.h>
 
@@ -12,6 +10,7 @@ enum light_type{
   SPOT_LIGHT
 };
 
+typedef unsigned int GLuint;
 
 typedef struct {
    enum light_type type;
