@@ -12,7 +12,7 @@
 #include "../include/headers/display.h"
 #include "../include/headers/input.h"
 #include "../include/headers/camera.h"
-
+#include "../include/headers/light.h"
 // Forward declaration
 bool init_openGL(void);
 const char* faces[6] = {
@@ -41,8 +41,8 @@ bool init_openGL(void)
     printf("initialized shaders\n");
 
     stbi_set_flip_vertically_on_load(true);
-    init_skybox(&skybox, faces, "shaders/skybox_vert.glsl",
-                                 "shaders/skybox_frag.glsl");
+    /* init_skybox(&skybox, faces, "shaders/skybox_vert.glsl",
+                                 "shaders/skybox_frag.glsl"); */
 
      /* object_t* object = &objects[current_num_objects];
     bool init_obj =  init_object(object, "Models/Cube/cube.obj",
@@ -57,11 +57,11 @@ bool init_openGL(void)
 
     object_t* object3 = &objects[current_num_objects];
     bool init_obj = init_object(object3, "Models/Dragon/Dragon.obj",
-                  "shaders/mirror_vertex.glsl",
-                   "shaders/mirror_frag.glsl");
+                  "shaders/light_vertex.glsl",
+                   "shaders/light_frag.glsl");
 
     
-
+    make_point_light((vec3){0.0f,10.0f,0.0f},(vec3){0.0f,1.0f,0.0f}, 5.0f, 10.0f);
     /* glm_vec3_zero(object->position);
     glm_vec3_zero(object->rotation);
     glm_vec3_one(object->scale);            

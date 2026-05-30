@@ -1,16 +1,23 @@
 #version 330 core
 
 out vec4 FragColor;
+uniform vec4  diffuse_color;
 
-in vec4 ourColor;
+uniform vec3  light_position;
+uniform vec3  light_color;
+uniform vec3  light_direction;
+uniform float light_intensity;
+uniform float light_range;
+uniform float light_inner_cutoff;
+uniform float light_outer_cutoff;
 
-uniform sampler2D ourTexture;
-uniform sampler2D texture2;
-uniform float time;
-uniform vec3 objectColor;
-uniform vec3 lightColor;
 
 void main()
 {
-    FragColor = vec4(lightColor, 1.0f);
+    vec4 final_color = vec4(1,1,1,1);
+
+    final_color.rgb *= light_color;
+    final_color.rgb *= light_intensity;
+
+    FragColor = final_color;
 }

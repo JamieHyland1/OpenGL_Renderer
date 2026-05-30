@@ -7,7 +7,10 @@
 #include <cglm/cglm.h>
 #include <cglm/struct.h>
 #include "../include/headers/framebuffer.h"
+#include "../include/headers/light.h"
 static int selected_object = -1;
+static vec4 scene_color = {0.0f,0.0f,0.0f, 0.0f};
+
 ///////////////////////////////////////////////////////////////////////////////
 // Render scene UI
 ///////////////////////////////////////////////////////////////////////////////
@@ -20,7 +23,43 @@ static void render_ui(void) {
                             ImGuiDockNodeFlags_PassthruCentralNode, NULL);
 
     igBegin("Scene Info", NULL, 0);
+
     igText("%.1f FPS", igGetIO_Nil()->Framerate);
+
+    igColorEdit4("Background Color", scene_color, 0);
+
+    int num_lights = get_num_lights();
+    for (int i = 0; i < num_lights; i++) {
+        igPushID_Int(i);
+
+        igText("Light %d", i);
+
+        igColorEdit3(
+            "Color",
+            lights_in_scene[i].color,
+            0
+        );
+
+        igSliderFloat3(
+            "Position",
+            lights_in_scene[i].position,
+            0.0f,
+            100.0f,
+            "%.3f",
+            0
+        );
+
+        igSliderFloat3(
+            "Direction",
+            lights_in_scene[i].direction,
+            -1.0f,
+            1.0f,
+            "%.3f",
+            0
+        );
+
+        igPopID();
+    }       
     igEnd();
 
     // ---- Hierarchy: list of objects, click to select ----
@@ -75,6 +114,10 @@ static void render_objects(){
     for(int i = 0; i < current_num_objects; i++){
         object_t* object = &objects[i];
         draw_object(object);
+        int num_lights = get_num_lights();
+        for(int j = 0; j < num_lights; j++){
+            light_apply_to_shader(object->shader->shader_ID, j);
+        }
     }
     draw_skybox(&skybox, view, projection);
 }
@@ -87,7 +130,7 @@ void render(void) {
     // ---- PASS 1: scene into the FBO (for the ImGui Scene panel) ----
     bind_framebuffer(&fb);
     glEnable(GL_DEPTH_TEST);
-    glClearColor(1.0f, 0.0f, 1.0f, 1.0f);   // magenta
+    glClearColor(scene_color[0], scene_color[1], scene_color[2], scene_color[3]);   // magenta
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     render_objects();
     unbind_framebuffer(&fb);
